@@ -1,0 +1,26 @@
+{
+  "name": "WiSeCRiB — Read. Quiz. Earn.",
+  "short_name": "WiSeCRiB",
+  "description": "A current-affairs reader for exam aspirants: read the news, prove it with a quiz, earn rewards. Demo prototype.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#F6F6FB",
+  "theme_color": "#3F3DD8",
+  "lang": "en-IN",
+  "dir": "ltr",
+  "categories": ["news", "education"],
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Practice", "short_name": "Practice", "url": "./#/practice", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Wallet", "short_name": "Wallet", "url": "./#/wallet", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }] }
+  ]
+}

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en-IN" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>WiSeCRiB — Read. Quiz. Earn.</title>
+  <meta name="description" content="WiSeCRiB: a current-affairs reader for exam aspirants. Read the news, prove it with a quiz, earn rewards. Demo prototype.">
+  <meta name="theme-color" content="#F6F6FB">
+  <meta name="color-scheme" content="light dark">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="WiSeCRiB">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="./icons/icon-192.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+  <script>
+    /* Theme boot: apply the saved theme before first paint to avoid a flash. */
+    (function () {
+      try {
+        var s = JSON.parse(localStorage.getItem('wisecrib:state') || 'null');
+        var t = (s && s.settings && s.settings.theme) || 'system';
+        if (t !== 'light' && t !== 'dark') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', t);
+        var m = document.querySelector('meta[name="theme-color"]');
+        if (m) m.setAttribute('content', t === 'dark' ? '#0F1020' : '#F6F6FB');
+      } catch (e) { /* storage unavailable: keep light */ }
+    })();
+  </script>
+  <link rel="stylesheet" href="./css/tokens.css">
+  <link rel="stylesheet" href="./css/base.css">
+  <link rel="stylesheet" href="./css/components.css">
+  <link rel="stylesheet" href="./css/views.css">
+</head>
+<body>
+  <a class="skip-link" href="#view" data-skip-link>Skip to content</a>
+  <div class="shell" id="shell">
+    <header id="app-header" class="app-header"></header>
+    <main id="view" class="view" tabindex="-1"></main>
+    <nav id="tabbar" class="tabbar" aria-label="Primary"></nav>
+    <div id="toast-root" class="toast-root"></div>
+    <div id="sheet-root" class="sheet-root"></div>
+  </div>
+  <p class="desktop-caption">WiSeCRiB prototype · Install as an app</p>
+  <div id="live" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+  <noscript>
+    <p class="noscript">WiSeCRiB needs JavaScript to run. Please enable it and reload.</p>
+  </noscript>
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>
