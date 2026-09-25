@@ -16,6 +16,9 @@ on('store:reset', () => {
 
 const MIN_INTERESTS = 2;
 
+// The form keeps its input when another tab changes the state (the router still redirects once onboarded).
+export const keepOnExternalChange = true;
+
 function dots(step) {
   return html`<div class="onb-dots" role="img" aria-label="${`Step ${step} of 3`}">
     ${[1, 2, 3].map((n) => html`<span class="${n === step ? 'is-active' : n < step ? 'is-done' : ''}"></span>`)}

@@ -36,6 +36,12 @@ function readRaw(key) {
   return memory.get(key) ?? null;
 }
 
+// The full localStorage key for a logical key (used to match `storage` events from other tabs).
+export const storageKey = (key) => NS + key;
+
+// Raw string as currently stored (null when absent).
+export const getRaw = (key) => readRaw(key);
+
 export function get(key) {
   const raw = readRaw(key);
   if (raw == null) return null;
@@ -46,17 +52,20 @@ export function get(key) {
   }
 }
 
-export function set(key, value) {
-  const raw = JSON.stringify(value);
+// Returns false when localStorage is available but the write failed (quota exceeded or blocked);
+// the value is still kept in memory for this session.
+export function setRaw(key, raw) {
   memory.set(key, raw);
   if (!available()) return false;
   try {
     localStorage.setItem(NS + key, raw);
     return true;
   } catch {
-    return false; // quota exceeded or blocked: keep the in-memory copy
+    return false;
   }
 }
+
+export const set = (key, value) => setRaw(key, JSON.stringify(value));
 
 export function remove(key) {
   memory.delete(key);

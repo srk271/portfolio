@@ -26,6 +26,9 @@ function rewardFor(r, article) {
   return { kind: r.sponsorCoins ? 'coins' : 'muted', html: html`<b>Quiz reward not applied</b> — ${reasonText(r.reason)}.${sponsorLine}` };
 }
 
+// Answers in progress are kept when another tab changes the state; submitting re-checks the latest state.
+export const keepOnExternalChange = true;
+
 export function render(container, ctx) {
   const article = getArticle(ctx.params.id);
   if (!article) {

@@ -117,6 +117,7 @@ function renderDailyResult(container, key, questions, answers, r, fresh) {
 }
 
 export const daily = {
+  keepOnExternalChange: true, // answers in progress; submit re-checks the latest state
   render(container) {
     const key = dateKey();
     const existing = dailyQuizRecord(getState(), key);
@@ -152,6 +153,7 @@ export const daily = {
 // ---------------------------------------------------------------- Mock test (premium)
 
 export const mock = {
+  keepOnExternalChange: true,
   render(container) {
     const state = getState();
     if (!state.premium.active) {

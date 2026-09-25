@@ -13,6 +13,8 @@ export function closeActiveSheet() {
   active?.close(null);
 }
 
+export const hasActiveSheet = () => active !== null;
+
 export function openSheet({ title, body = '', actions = [], onMount = null, dismissible = true, testid = 'sheet' }) {
   if (active) active.close(null);
   return new Promise((resolve) => {

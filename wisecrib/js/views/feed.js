@@ -109,7 +109,11 @@ export function render(container, ctx) {
   const searchEl = container.querySelector('input[type="search"]');
   const clearBtn = container.querySelector('[data-action="clear"]');
 
+  // Ad impressions are counted when the user sees a list, not when another tab's change re-renders it.
+  let countAds = !ctx.external;
   const renderList = () => {
+    const count = countAds;
+    countAds = true;
     const s = getState();
     const list = search(filterByCategory(rankFeed(s), feedState.category), feedState.query);
     if (!list.length) {
@@ -124,7 +128,7 @@ export function render(container, ctx) {
     const items = [];
     list.forEach((a, i) => {
       items.push(storyCard(a, i === 0 ? 'lead' : 'compact', s));
-      if ((i + 1) % APP.feedAdEvery === 0 && i < list.length - 1) items.push(renderAdSlot({ placement: 'feed' }));
+      if ((i + 1) % APP.feedAdEvery === 0 && i < list.length - 1) items.push(renderAdSlot({ placement: 'feed', count }));
     });
     const countLabel = feedState.query || feedState.category !== 'all' ? html`<p class="feed-count muted small" aria-live="polite">${fmtNumber(list.length)} ${list.length === 1 ? 'article' : 'articles'}</p>` : '';
     mount(listEl, html`${countLabel}${items}`);

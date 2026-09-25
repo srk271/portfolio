@@ -14,10 +14,10 @@ function flush() {
   recordAdImpressions(n);
 }
 
-export function renderAdSlot({ placement = 'feed' } = {}) {
+export function renderAdSlot({ placement = 'feed', count = true } = {}) {
   if (getState().premium.active) return '';
-  pending += 1;
-  if (!scheduled) {
+  if (count) pending += 1;
+  if (count && !scheduled) {
     scheduled = true;
     setTimeout(flush, 0);
   }

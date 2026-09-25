@@ -8,6 +8,7 @@ import { generateCode } from './referral.js';
 
 export function completeOnboarding({ name, goal, interests, referralCode = null }) {
   return update((s) => {
+    if (s.profile.onboarded) return { welcome: 0, already: true }; // e.g. finished in another tab
     const now = Date.now();
     s.profile = { id: uid('u'), name: name.trim(), goal, interests: [...interests], createdAt: now, onboarded: true };
     s.referral.code = generateCode(referralCode);

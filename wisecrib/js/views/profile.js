@@ -71,9 +71,9 @@ function template(state) {
   </div>`;
 }
 
-export function render(container) {
+export function render(container, ctx) {
   const dispose = disposer();
-  editing = false;
+  if (!ctx.external) editing = false; // keep an in-progress edit when another tab changes the state
   const draw = () => {
     const top = container.scrollTop;
     mount(container, template(getState()));

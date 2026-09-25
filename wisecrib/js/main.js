@@ -3,7 +3,7 @@
 import * as store from './store.js';
 import { on } from './bus.js';
 import { html, mount } from './dom.js';
-import { start } from './router.js';
+import { start, stop } from './router.js';
 import { mountHeader } from './ui/header.js';
 import { mountTabbar } from './ui/tabbar.js';
 import { toast } from './ui/toast.js';
@@ -28,20 +28,27 @@ function applyTheme(settings = {}) {
 
 function renderFatal(err) {
   document.body.dataset.chrome = 'none';
+  document.body.dataset.tabbar = 'none';
   const view = document.getElementById('view');
+  const newer = err instanceof store.NewerDataError;
   mount(view, html`<div class="page fatal">
-    <div class="card card-pad stack" data-testid="fatal-error">
+    <div class="card card-pad stack" data-testid="fatal-error" data-kind="${newer ? 'newer' : 'corrupt'}">
       <div class="fatal-ico">${icon('alert')}</div>
-      <h1 class="h-section">Saved data couldn't be read</h1>
-      <p class="muted">${err?.message || 'Unknown error'} Resetting clears this device's demo progress.</p>
-      <button type="button" class="btn btn-primary btn-block" id="fatal-reset" data-testid="fatal-reset">Reset demo data</button>
+      ${newer
+        ? html`<h1 class="h-section">WiSeCRiB was updated</h1>
+          <p class="muted">${err.message} Reload to use the latest version; your progress is kept.</p>
+          <button type="button" class="btn btn-primary btn-block" data-testid="fatal-reload">Reload</button>`
+        : html`<h1 class="h-section">Saved data couldn't be read</h1>
+          <p class="muted">${err?.message || 'Unknown error'} Resetting clears this device's demo progress.</p>
+          <button type="button" class="btn btn-primary btn-block" data-testid="fatal-reset">Reset demo data</button>`}
     </div>
   </div>`);
-  view.querySelector('#fatal-reset').addEventListener('click', () => {
+  view.querySelector('[data-testid="fatal-reset"]')?.addEventListener('click', () => {
     storage.remove('state');
     location.hash = '#/onboarding';
     location.reload();
   });
+  view.querySelector('[data-testid="fatal-reload"]')?.addEventListener('click', () => location.reload());
 }
 
 function wireGlobalEvents() {
@@ -54,6 +61,14 @@ function wireGlobalEvents() {
     toast({ message: message || `Reward not applied — ${reasonText(reason)}`, kind: 'warn', duration: 5000 });
   });
   on('toast', (opts) => toast(opts));
+  // Another tab saved data this version can't read or must not overwrite: stop and explain (after the
+  // current task, so a view finishing an action can't draw over the message).
+  on('store:halted', (err) => {
+    setTimeout(() => {
+      stop();
+      renderFatal(err);
+    }, 0);
+  });
   on('theme:changed', () => applyTheme(store.getState().settings));
 
   const skip = document.querySelector('[data-skip-link]');
@@ -65,12 +80,14 @@ function wireGlobalEvents() {
 
 function boot() {
   captureInstallPrompt();
+  wireGlobalEvents(); // before load(), so a storage warning raised while loading is shown
   try {
     store.load();
   } catch (err) {
     console.warn('[wisecrib] could not load saved state', err);
     applyTheme({});
     renderFatal(err);
+    registerServiceWorker(); // so a newer version can still install
     return;
   }
   applyTheme(store.getState().settings);
@@ -81,7 +98,6 @@ function boot() {
 
   mountHeader(document.getElementById('app-header'));
   mountTabbar(document.getElementById('tabbar'));
-  wireGlobalEvents();
   start(document.getElementById('view'));
   registerServiceWorker();
 }

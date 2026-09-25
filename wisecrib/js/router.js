@@ -1,9 +1,12 @@
 // Hash router: route table with params, onboarding guard, deterministic back targets, scroll reset, cleanup.
 // Views are modules exporting render(container, ctx) -> optional cleanup function.
+// When another tab changes the saved state ('store:external'), the current view is re-rendered in place
+// (scroll kept, focus not moved). Views that hold in-progress input export keepOnExternalChange = true;
+// they re-check state when the user acts, and pick up the new data on the next navigation.
 import { getState } from './store.js';
-import { emit } from './bus.js';
+import { emit, on } from './bus.js';
 import { html, mount } from './dom.js';
-import { closeActiveSheet } from './ui/sheet.js';
+import { closeActiveSheet, hasActiveSheet } from './ui/sheet.js';
 import * as Onboarding from './views/onboarding.js';
 import * as Feed from './views/feed.js';
 import * as Article from './views/article.js';
@@ -45,6 +48,7 @@ let viewEl = null;
 let cleanup = null;
 let current = null;
 let renders = 0;
+let externalQueued = false;
 
 function parseHash(hash) {
   const h = String(hash || '').replace(/^#\/?/, '');
@@ -94,7 +98,18 @@ export function refresh() {
   render();
 }
 
-function render() {
+// Another tab changed the saved state: re-render the current view once the current task finishes.
+function onExternalChange() {
+  if (externalQueued || !viewEl) return;
+  externalQueued = true;
+  queueMicrotask(() => {
+    externalQueued = false;
+    if (viewEl) render({ external: true });
+  });
+}
+
+function render({ external = false } = {}) {
+  if (!viewEl) return undefined; // stopped
   const { segs, query } = parseHash(location.hash);
   const state = getState();
   if (!segs.length) return navigate(state.profile.onboarded ? '#/feed' : '#/onboarding', { replace: true });
@@ -104,6 +119,8 @@ function render() {
     return navigate('#/onboarding', { replace: true });
   }
   if (state.profile.onboarded && route.name === 'onboarding') return navigate('#/feed', { replace: true });
+  // Don't tear down an open sheet or a view with in-progress input for a change made elsewhere.
+  if (external && (hasActiveSheet() || route.view.keepOnExternalChange || current?.name !== route.name)) return undefined;
 
   if (cleanup) {
     try {
@@ -125,11 +142,13 @@ function render() {
   emit('route:changed', { ...current, title: route.title });
   document.title = route.name === 'feed' ? 'WiSeCRiB — Read. Quiz. Earn.' : `${route.title} · WiSeCRiB`;
 
+  const scrollTop = viewEl.scrollTop;
   viewEl.scrollTop = 0;
   const ctx = {
     params,
     query,
     route: resolvedRoute,
+    external, // true when re-rendering because another tab changed the state
     navigate,
     refresh: () => render(),
     setTitle: (text) => emit('header:title', text)
@@ -145,13 +164,35 @@ function render() {
       <a class="btn btn-primary" href="#/feed">Back to feed</a>
     </div></div>`);
   }
+  if (external) viewEl.scrollTop = scrollTop;
   emit('view:rendered', viewEl);
   renders += 1;
-  if (renders > 1) viewEl.focus({ preventScroll: true });
+  if (renders > 1 && !external) viewEl.focus({ preventScroll: true });
+  return undefined;
 }
+
+const onHashChange = () => render();
+let offExternal = null;
 
 export function start(el) {
   viewEl = el;
-  window.addEventListener('hashchange', render);
+  window.addEventListener('hashchange', onHashChange);
+  offExternal = on('store:external', onExternalChange);
   render();
+}
+
+// Stops routing (used when saved data can no longer be written, e.g. a newer version took over).
+export function stop() {
+  window.removeEventListener('hashchange', onHashChange);
+  offExternal?.();
+  if (cleanup) {
+    try {
+      cleanup();
+    } catch (err) {
+      console.error('[router] cleanup failed', err);
+    }
+    cleanup = null;
+  }
+  closeActiveSheet();
+  viewEl = null;
 }

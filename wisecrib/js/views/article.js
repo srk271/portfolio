@@ -83,6 +83,9 @@ function quizCta(article, state) {
   </a>`;
 }
 
+// The read tracker keeps running when another tab changes the state; the award re-checks the latest state.
+export const keepOnExternalChange = true;
+
 export function render(container, ctx) {
   const dispose = disposer();
   const article = getArticle(ctx.params.id);
