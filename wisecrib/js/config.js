@@ -49,7 +49,7 @@ const BASE_APP = {
   name: 'WiSeCRiB',
   tagline: 'Read the news. Prove it with a quiz. Earn rewards.',
   version: '1.0.0',
-  cacheVersion: 'wisecrib-v1', // mirror of CACHE in sw.js, shown in Settings
+  cacheVersion: 'wisecrib-v2', // mirror of CACHE in sw.js, shown in Settings
   schemaVersion: 1,
   feedAdEvery: 5,
   // Demo articles are dated relative to this fixed anchor so recency ranking stays stable.

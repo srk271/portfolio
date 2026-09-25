@@ -34,21 +34,17 @@ export async function promptInstall() {
 
 export function registerServiceWorker() {
   if (!('serviceWorker' in navigator) || !/^https?:$/.test(location.protocol)) return;
+  // A new version installed and took control of this page (see "Update model" in sw.js). This page is
+  // still the previous version as a whole, so offer a reload. The very first install stays silent.
+  const hadController = Boolean(navigator.serviceWorker.controller);
+  let offered = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController || offered) return;
+    offered = true;
+    toast({ message: 'Update available', kind: 'info', iconName: 'sparkle', action: { label: 'Reload', onClick: () => location.reload() } });
+  });
   const register = () => {
-    navigator.serviceWorker
-      .register('./sw.js')
-      .then((registration) => {
-        registration.addEventListener('updatefound', () => {
-          const worker = registration.installing;
-          if (!worker || !navigator.serviceWorker.controller) return; // first install, not an update
-          worker.addEventListener('statechange', () => {
-            if (worker.state === 'activated') {
-              toast({ message: 'Update available', kind: 'info', iconName: 'sparkle', action: { label: 'Reload', onClick: () => location.reload() } });
-            }
-          });
-        });
-      })
-      .catch((err) => console.warn('[pwa] service worker registration failed', err));
+    navigator.serviceWorker.register('./sw.js').catch((err) => console.warn('[pwa] service worker registration failed', err));
   };
   if (document.readyState === 'complete') register();
   else window.addEventListener('load', register, { once: true });
