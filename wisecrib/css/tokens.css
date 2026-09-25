@@ -1,0 +1,151 @@
+/* WiSeCRiB design tokens: "Ink & Gold". Light is the default; dark overrides below. */
+:root {
+  color-scheme: light;
+
+  /* Brand ink */
+  --brand-50: #F3F3FE;
+  --brand-100: #E8E8FB;
+  --brand-200: #CFCFF7;
+  --brand-400: #8B8AF5;
+  --brand-500: #5856E6;
+  --brand-600: #3F3DD8;
+  --brand-700: #3230B0;
+  --brand-800: #26248A;
+  --brand-900: #1A1960;
+
+  /* Coin gold: always dark text on gold */
+  --coin-100: #FFF3C7;
+  --coin-300: #FFD66B;
+  --coin-500: #F5B301;
+  --coin-600: #D99A00;
+  --coin-ink: #3D2C00;
+
+  /* Status */
+  --success: #1B9E5A;
+  --danger: #D93B3B;
+  --warning: #B7791F;
+
+  /* Surfaces and text (light) */
+  --bg: #F6F6FB;
+  --surface: #FFFFFF;
+  --surface-2: #EEEFF8;
+  --surface-3: #E4E5F2;
+  --text: #14162B;
+  --muted: #5C6080;
+  --border: #DCDDEB;
+
+  --link: var(--brand-600);
+  --accent-text: var(--brand-700);
+  --accent-soft: var(--brand-100);
+  --success-text: #13784A;
+  --success-soft: #E3F5EC;
+  --danger-text: #B42828;
+  --danger-soft: #FCE8E8;
+  --warning-text: #875A10;
+  --warning-soft: #FDF1DC;
+  --coin-soft: #FFF3C7;
+  --coin-text: #5C4300;
+
+  --ink-grad: linear-gradient(135deg, #4744E0 0%, #3230B0 50%, #1F1E78 100%);
+  --gold-grad: linear-gradient(135deg, #FFE08A 0%, #F5B301 55%, #D99A00 100%);
+  --backdrop-grad: radial-gradient(1200px 700px at 15% 10%, #E4E3FF 0%, transparent 60%),
+                   radial-gradient(900px 600px at 90% 90%, #FFF1C4 0%, transparent 60%),
+                   #EDEDF7;
+
+  /* Elevation */
+  --shadow-1: 0 1px 2px rgba(20, 22, 43, .06), 0 1px 3px rgba(20, 22, 43, .05);
+  --shadow-2: 0 12px 28px -14px rgba(20, 22, 43, .28), 0 2px 6px rgba(20, 22, 43, .06);
+  --shadow-3: 0 30px 70px -24px rgba(20, 22, 43, .45), 0 4px 14px rgba(20, 22, 43, .08);
+
+  /* Radii */
+  --r-xs: 6px;
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 18px;
+  --r-xl: 24px;
+  --r-pill: 999px;
+
+  /* Spacing */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+  --gutter: 16px;
+
+  /* Type */
+  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, "Helvetica Neue", Arial, sans-serif;
+  --font-serif: Georgia, "Times New Roman", serif;
+  --fs-xs: .75rem;
+  --fs-sm: .875rem;
+  --fs-md: 1rem;
+  --fs-lg: 1.125rem;
+  --fs-xl: 1.375rem;
+  --fs-2xl: 1.75rem;
+  --fs-3xl: 2.25rem;
+
+  /* Motion */
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  --dur-1: 150ms;
+  --dur-2: 250ms;
+  --dur-3: 400ms;
+
+  /* Layout */
+  --header-h: 56px;
+  --tabbar-h: 60px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  --backdrop: rgba(12, 12, 32, .5);
+  --toast-bg: #14162B;
+  --toast-text: #F4F5FF;
+  --skeleton: #E6E7F2;
+  /* Focus ring: >= 3:1 on every surface it sits on (5.85:1 on surface-3 .. 7.32:1 on white). */
+  --focus-ring: var(--brand-600);
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #0F1020;
+  --surface: #171932;
+  --surface-2: #1F2242;
+  --surface-3: #282B52;
+  --text: #EEF0FF;
+  --muted: #A2A6C8;
+  --border: #2A2E55;
+
+  --link: var(--brand-400);
+  --accent-text: #B9B8FC;
+  --accent-soft: #262862;
+  --success-text: #5BD497;
+  --success-soft: #133626;
+  --danger-text: #FF8F8F;
+  --danger-soft: #3A1A24;
+  --warning-text: #F2BE63;
+  --warning-soft: #3A2C12;
+  --coin-soft: #3A3010;
+  --coin-text: #FFD66B;
+
+  --ink-grad: linear-gradient(135deg, #4744E0 0%, #2C2A98 50%, #1A1960 100%);
+  --backdrop-grad: radial-gradient(1200px 700px at 15% 10%, #1D1D52 0%, transparent 60%),
+                   radial-gradient(900px 600px at 90% 90%, #2A2310 0%, transparent 60%),
+                   #090A16;
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, .45);
+  --shadow-2: 0 12px 28px -14px rgba(0, 0, 0, .8), 0 2px 6px rgba(0, 0, 0, .3);
+  --shadow-3: 0 30px 70px -24px rgba(0, 0, 0, .9);
+
+  --backdrop: rgba(0, 0, 0, .62);
+  --toast-bg: #EEF0FF;
+  --toast-text: #14162B;
+  --skeleton: #23264A;
+  --focus-ring: var(--brand-400); /* 4.53:1 on surface-3 .. 6.61:1 on the backdrop */
+}
+
+/* Controls on ink cards and toasts sit on a dark (or, in dark theme, light) fill: use a ring that
+   contrasts with that fill (white on ink >= 6.6:1; toast text colour on the toast >= 16:1). */
+.card-ink > * { --focus-ring: #FFFFFF; }
+.toast { --focus-ring: var(--toast-text); }
