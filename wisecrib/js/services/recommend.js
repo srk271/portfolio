@@ -1,11 +1,9 @@
 // Feed ranking: goal weights + interests + reading history + exam-tag match + recency.
-// Recency is measured from APP.contentAnchor so the demo ranking is stable over time.
-import { ARTICLES, getArticle } from '../data/articles.js';
+// Recency is measured from CONTENT_NOW; demo dates are shifted uniformly, so the ranking is stable over time.
+import { ARTICLES, CONTENT_NOW, getArticle } from '../data/articles.js';
 import { getGoal } from '../data/goals.js';
 import { getCategory } from '../data/categories.js';
-import { APP } from '../config.js';
 
-const ANCHOR = new Date(APP.contentAnchor).getTime();
 const DAY = 86400000;
 
 export function examTagMatch(article, goal) {
@@ -21,7 +19,7 @@ export function scoreArticle(article, state) {
   const history = state.stats.categoryCounts[article.category] || 0;
   score += Math.min(2, history * 0.5);
   if (examTagMatch(article, goal)) score += 2;
-  const days = Math.max(0, (ANCHOR - new Date(article.publishedAt).getTime()) / DAY);
+  const days = Math.max(0, (CONTENT_NOW - new Date(article.publishedAt).getTime()) / DAY);
   score += Math.max(0, 3 - days * 0.12); // 0..3, fades over ~25 days
   if (state.reads[article.id]) score -= 8; // already verified: sink below unread
   return score;

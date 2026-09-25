@@ -133,7 +133,7 @@ export function render(container, ctx) {
       </aside>
       <div class="reader-text">${article.body.map((p) => html`<p>${p}</p>`)}</div>
       <div id="article-end" class="article-end" aria-hidden="true"></div>
-      <section class="read-status card" data-testid="read-status" data-required-ms="${required}" data-state="${initialState}" aria-live="polite">
+      <section class="read-status card" data-testid="read-status" data-required-ms="${required}" data-state="${initialState}">
         ${existing ? statusAlready(existing) : statusReading(required, coins)}
       </section>
       ${renderAdSlot({ placement: 'article' })}

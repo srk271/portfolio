@@ -4,7 +4,7 @@
 // quote() always returns the full breakdown so the UI can show coins -> value -> fee -> receive before confirming.
 import { update, getState } from '../store.js';
 import { ECONOMY } from '../config.js';
-import { VOUCHER_MAP } from '../data/vouchers.js';
+import { getVoucher } from '../data/vouchers.js';
 import { round2, rupeesToCoins, coinsToRupees, randomCode, uid, fmtRupees } from '../format.js';
 import { spend } from './wallet.js';
 
@@ -37,7 +37,7 @@ export function quote({ kind, rupees, itemId }, state = getState()) {
       minRupees: tier.minRupees, maxRupees: ECONOMY.redemption.maxCashRupees, balance
     };
   }
-  const item = VOUCHER_MAP[itemId];
+  const item = getVoucher(itemId);
   if (!item) return { kind: 'voucher', ok: false, reason: 'not_found' };
   const feeRate = item.feeExempt ? ECONOMY.redemption.charityFeeRate : tierFor(state).feeRate;
   const feeCoins = Math.ceil(item.coins * feeRate);

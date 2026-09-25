@@ -3,7 +3,7 @@ import { html, mount, delegate, disposer } from '../dom.js';
 import { emit } from '../bus.js';
 import { getState } from '../store.js';
 import { ECONOMY } from '../config.js';
-import { VOUCHER_MAP } from '../data/vouchers.js';
+import { getVoucher } from '../data/vouchers.js';
 import { fmtCoins, fmtRupees, coinsToRupees, fmtTime, fmtDayLabel, dateKey, fmtDate } from '../format.js';
 import { icon, coinIcon, crownIcon } from '../ui/icons.js';
 import { openSheet } from '../ui/sheet.js';
@@ -78,7 +78,7 @@ function redemptionsTemplate(state) {
   }
   return html`<ul class="card list" data-testid="redemptions">
     ${[...state.redemptions].reverse().map((r) => {
-      const item = r.itemId ? VOUCHER_MAP[r.itemId] : null;
+      const item = getVoucher(r.itemId);
       return html`<li class="redemption-row" data-testid="redemption-row" data-kind="${r.kind}">
         <span class="ledger-ico is-neg">${icon(r.kind === 'cash' ? 'rupee' : 'store')}</span>
         <div class="ledger-main">

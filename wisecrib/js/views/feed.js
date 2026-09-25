@@ -15,7 +15,6 @@ import { dailyQuizRecord } from '../services/quiz.js';
 import { readCoinsFor } from '../services/reading.js';
 import { quizCoinsFor } from '../services/quiz.js';
 
-const ANCHOR = new Date(APP.contentAnchor).getTime();
 const freshFeedState = () => ({ category: 'all', query: '', scroll: 0 });
 let feedState = freshFeedState();
 on('store:reset', () => {
@@ -43,7 +42,7 @@ export function storyCard(article, variant, state) {
       </div>
       <h3 class="story-title">${article.title}</h3>
       ${lead ? html`<p class="story-dek">${article.dek}</p>` : ''}
-      <div class="story-meta">${article.source.publisherName} · ${timeAgo(article.publishedAt, ANCHOR)} · ${article.readingTime} min</div>
+      <div class="story-meta">${article.source.publisherName} · ${timeAgo(article.publishedAt)} · ${article.readingTime} min</div>
       <div class="story-foot">
         <span class="story-exams">${article.examTags.slice(0, 2).map((t) => html`<span class="tag tag-exam">${t}</span>`)}</span>
         ${rewardBadge(article, state)}

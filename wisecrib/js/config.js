@@ -52,7 +52,8 @@ const BASE_APP = {
   cacheVersion: 'wisecrib-v2', // mirror of CACHE in sw.js, shown in Settings
   schemaVersion: 1,
   feedAdEvery: 5,
-  // Demo articles are dated relative to this fixed anchor so recency ranking stays stable.
+  // Demo article dates are written relative to this anchor, then shifted so it maps to "now" at load
+  // (see data/articles.js): dates stay current and the recency ranking stays stable.
   contentAnchor: '2026-09-24T21:00:00+05:30',
   otp: { digits: 4, maxAttempts: 3 },
   planTargets: { usersYear1: 100000, revenueYear1Usd: 300000, marketCapUsd: 10000000 }

@@ -102,7 +102,8 @@
   --toast-bg: #14162B;
   --toast-text: #F4F5FF;
   --skeleton: #E6E7F2;
-  --focus-ring: var(--brand-400);
+  /* Focus ring: >= 3:1 on every surface it sits on (5.85:1 on surface-3 .. 7.32:1 on white). */
+  --focus-ring: var(--brand-600);
 }
 
 [data-theme="dark"] {
@@ -141,4 +142,10 @@
   --toast-bg: #EEF0FF;
   --toast-text: #14162B;
   --skeleton: #23264A;
+  --focus-ring: var(--brand-400); /* 4.53:1 on surface-3 .. 6.61:1 on the backdrop */
 }
+
+/* Controls on ink cards and toasts sit on a dark (or, in dark theme, light) fill: use a ring that
+   contrasts with that fill (white on ink >= 6.6:1; toast text colour on the toast >= 16:1). */
+.card-ink > * { --focus-ring: #FFFFFF; }
+.toast { --focus-ring: var(--toast-text); }

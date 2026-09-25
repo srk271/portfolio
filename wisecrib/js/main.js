@@ -52,13 +52,14 @@ function renderFatal(err) {
 }
 
 function wireGlobalEvents() {
-  on('coins:awarded', ({ amount, from = null, message = null }) => {
+  // quiet: the screen already announced this outcome (e.g. a quiz result), so the toast isn't re-read.
+  on('coins:awarded', ({ amount, from = null, message = null, quiet = false }) => {
     if (!amount) return;
     burst({ from, amount });
-    toast({ message: message || `+${amount} coins`, kind: 'coin' });
+    toast({ message: message || `+${amount} coins`, kind: 'coin', announceIt: !quiet });
   });
-  on('reward:rejected', ({ reason, message = null }) => {
-    toast({ message: message || `Reward not applied — ${reasonText(reason)}`, kind: 'warn', duration: 5000 });
+  on('reward:rejected', ({ reason, message = null, quiet = false }) => {
+    toast({ message: message || `Reward not applied — ${reasonText(reason)}`, kind: 'warn', duration: 5000, announceIt: !quiet });
   });
   on('toast', (opts) => toast(opts));
   // Another tab saved data this version can't read or must not overwrite: stop and explain (after the

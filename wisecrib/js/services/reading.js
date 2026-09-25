@@ -25,7 +25,7 @@ export function readStatus(articleId, state = getState()) {
 }
 
 export function markOpened(articleId) {
-  if (getState().stats.openedIds.includes(articleId)) return;
+  if (!getArticle(articleId) || getState().stats.openedIds.includes(articleId)) return;
   update((s) => {
     if (!s.stats.openedIds.includes(articleId)) s.stats.openedIds.push(articleId);
   });

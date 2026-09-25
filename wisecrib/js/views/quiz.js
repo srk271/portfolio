@@ -32,7 +32,7 @@ export const keepOnExternalChange = true;
 export function render(container, ctx) {
   const article = getArticle(ctx.params.id);
   if (!article) {
-    mount(container, html`<div class="page"><div class="empty card">${icon('search')}<div class="empty-title">Quiz not found</div><a class="btn btn-primary" href="#/feed">Back to feed</a></div></div>`);
+    mount(container, html`<div class="page"><div class="empty card" data-testid="quiz-not-found">${icon('search')}<div class="empty-title">Quiz not found</div><a class="btn btn-primary" href="#/feed">Back to feed</a></div></div>`);
     return null;
   }
   const cat = getCategory(article.category);
@@ -73,6 +73,7 @@ export function render(container, ctx) {
         reward: rewardFor(r, article),
         questions,
         answers,
+        fresh: true,
         actions: html`<a class="btn btn-primary btn-block" href="#/article/${article.id}" data-testid="quiz-back">Back to article</a>
           ${next ? html`<a class="btn btn-secondary btn-block" href="#/article/${next.id}" data-testid="quiz-next">Next article</a>` : ''}
           <button type="button" class="btn btn-ghost btn-block" data-testid="quiz-retry">Practice again</button>`
@@ -84,10 +85,11 @@ export function render(container, ctx) {
         emit('coins:awarded', {
           amount: total,
           from,
-          message: r.sponsorCoins ? `Quiz passed · +${r.coins} coins +${r.sponsorCoins} brand bonus` : `Quiz passed · +${r.coins} coins`
+          message: r.sponsorCoins ? `Quiz passed · +${r.coins} coins +${r.sponsorCoins} brand bonus` : `Quiz passed · +${r.coins} coins`,
+          quiet: true
         });
       }
-      if (!r.practice && r.passed && r.coins === 0 && r.reason) emit('reward:rejected', { reason: r.reason });
+      if (!r.practice && r.passed && r.coins === 0 && r.reason) emit('reward:rejected', { reason: r.reason, quiet: true });
     }
   });
 }

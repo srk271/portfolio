@@ -3,7 +3,7 @@ import { html, mount } from '../dom.js';
 import { emit } from '../bus.js';
 import { getState } from '../store.js';
 import { ECONOMY } from '../config.js';
-import { ARTICLE_MAP } from '../data/articles.js';
+import { getArticle } from '../data/articles.js';
 import { getCategory } from '../data/categories.js';
 import { dateKey, fmtPercent, fmtNumber } from '../format.js';
 import { icon, coinIcon, crownIcon } from '../ui/icons.js';
@@ -58,7 +58,7 @@ export function render(container) {
   const state = getState();
   const st = state.stats;
   const accuracy = st.quizAnswered ? fmtPercent(st.quizCorrect / st.quizAnswered) : '—';
-  const verifiedIds = Object.keys(state.reads).filter((id) => ARTICLE_MAP[id]).sort((a, b) => state.reads[b].verifiedAt - state.reads[a].verifiedAt);
+  const verifiedIds = Object.keys(state.reads).filter((id) => getArticle(id)).sort((a, b) => state.reads[b].verifiedAt - state.reads[a].verifiedAt);
   const ready = verifiedIds.filter((id) => !state.quizzes[id]?.rewardedAttemptAt);
   const done = verifiedIds.filter((id) => state.quizzes[id]?.rewardedAttemptAt);
   const coins = quizCoinsFor(state);
@@ -79,7 +79,7 @@ export function render(container) {
       <div class="section-head"><h2 class="h-section">Article quizzes</h2><span class="muted small">${ready.length} ready</span></div>
       ${verifiedIds.length ? html`<div class="card list" data-testid="article-quiz-list">
         ${[...ready, ...done].map((id) => {
-          const a = ARTICLE_MAP[id];
+          const a = getArticle(id);
           const q = state.quizzes[id];
           const cat = getCategory(a.category);
           return html`<a class="list-row" href="#/quiz/${id}" data-testid="article-quiz-row" data-state="${q?.rewardedAttemptAt ? 'done' : 'ready'}">
@@ -96,22 +96,31 @@ export function render(container) {
 
 // ---------------------------------------------------------------- Daily quiz
 
+const ROLLOVER_NOTE = ' The date changed while you were answering, so this counts as today\'s quiz.';
+
 function dailyReward(r) {
-  if (r.coins > 0) return { kind: 'coins', html: html`<b>+${r.coins} coins</b> added${r.perfect ? ' (perfect score bonus included)' : ''}.${r.coins < r.want ? ' Capped by today\'s activity limit.' : ''}` };
-  if (r.want > 0) return { kind: 'muted', html: html`<b>Reward not applied</b> — ${reasonText(r.reason)}.` };
-  return { kind: 'muted', html: html`<b>No coins this time.</b> Read a few explainers and try again tomorrow.` };
+  if (r.already) return { kind: 'muted', html: html`<b>Already completed</b> — this attempt earns no coins. A new set unlocks tomorrow.` };
+  const note = r.rolledOver ? ROLLOVER_NOTE : '';
+  if (r.coins > 0) return { kind: 'coins', html: html`<b>+${r.coins} coins</b> added${r.perfect ? ' (perfect score bonus included)' : ''}.${r.coins < r.want ? ' Capped by today\'s activity limit.' : ''}${note}` };
+  if (r.want > 0) return { kind: 'muted', html: html`<b>Reward not applied</b> — ${reasonText(r.reason)}.${note}` };
+  return { kind: 'muted', html: html`<b>No coins this time.</b> Read a few explainers and try again tomorrow.${note}` };
 }
 
-function renderDailyResult(container, key, questions, answers, r, fresh) {
+function renderUnavailable(container) {
+  mount(container, html`<div class="page"><div class="empty card" data-testid="quiz-unavailable">${icon('info')}<div class="empty-title">This quiz is no longer available</div><p>Your saved progress changed while you were answering. Nothing was recorded.</p><a class="btn btn-primary" href="#/practice">Back to practice</a></div></div>`);
+}
+
+function renderDailyResult(container, questions, answers, r, fresh) {
   renderQuizResult(container, {
-    heading: fresh ? 'Daily quiz result' : 'Completed today',
+    heading: r.already ? 'Daily quiz · already completed' : fresh ? 'Daily quiz result' : 'Completed today',
     correct: r.correct,
     total: r.total,
     passed: r.correct >= Math.ceil(r.total / 2),
-    message: r.correct === r.total ? 'Perfect score!' : fresh ? 'Quiz complete' : 'Come back tomorrow',
+    message: r.correct === r.total ? 'Perfect score!' : fresh && !r.already ? 'Quiz complete' : 'Come back tomorrow',
     reward: fresh ? dailyReward(r) : { kind: r.coins ? 'coins' : 'muted', html: html`<b>+${r.coins} coins</b> earned today. A new set unlocks tomorrow.` },
     questions,
     answers,
+    fresh,
     actions: html`<a class="btn btn-primary btn-block" href="#/practice" data-testid="daily-back">Back to practice</a><a class="btn btn-secondary btn-block" href="#/feed">Read more explainers</a>`
   });
 }
@@ -124,7 +133,7 @@ export const daily = {
     if (existing?.completedAt) {
       const questions = resolveRefs(existing.questionRefs);
       if (Array.isArray(existing.answers) && existing.answers.length === questions.length) {
-        renderDailyResult(container, key, questions, existing.answers, existing, false);
+        renderDailyResult(container, questions, existing.answers, existing, false);
       } else {
         mount(container, html`<div class="page"><div class="empty card">${icon('checkCircle')}<div class="empty-title">Completed today · ${existing.correct}/${existing.total}</div><p>Come back tomorrow for a new set.</p><a class="btn btn-primary" href="#/practice">Back to practice</a></div></div>`);
       }
@@ -138,12 +147,17 @@ export const daily = {
       subheading: `${questions.length} questions · +${ECONOMY.dailyQuiz.coinsPerCorrect} per correct · +${ECONOMY.dailyQuiz.perfectBonus} perfect bonus · once a day`,
       questions,
       onSubmit: (answers) => {
-        const r = submitDailyQuiz(key, answers);
-        renderDailyResult(container, key, questions, answers, r, true);
+        // The day is decided at submit time, not when the quiz was opened.
+        const r = submitDailyQuiz(key, answers, dateKey());
+        if (r.error) {
+          renderUnavailable(container);
+          return;
+        }
+        renderDailyResult(container, questions, answers, r, true);
         if (r.coins > 0) {
-          emit('coins:awarded', { amount: r.coins, from: container.querySelector('[data-testid="quiz-result-coins"]')?.getBoundingClientRect(), message: `Daily quiz · +${r.coins} coins` });
+          emit('coins:awarded', { amount: r.coins, from: container.querySelector('[data-testid="quiz-result-coins"]')?.getBoundingClientRect(), message: `Daily quiz · +${r.coins} coins`, quiet: true });
         } else if (r.want > 0 && r.reason) {
-          emit('reward:rejected', { reason: r.reason });
+          emit('reward:rejected', { reason: r.reason, quiet: true });
         }
       }
     });
@@ -151,6 +165,14 @@ export const daily = {
 };
 
 // ---------------------------------------------------------------- Mock test (premium)
+
+function mockReward(r) {
+  if (r.already) return { kind: 'muted', html: html`<b>Already completed</b> — this attempt earns no coins. A new test unlocks tomorrow.` };
+  if (r.locked) return { kind: 'muted', html: html`<b>No coins applied</b> — Premium is no longer active.` };
+  const note = r.rolledOver ? ROLLOVER_NOTE.replace('quiz', 'test') : '';
+  if (r.coins > 0) return { kind: 'coins', html: html`<b>+${r.coins} coins</b> added.${note}` };
+  return { kind: 'muted', html: html`<b>No coins applied</b>${r.reason ? html` — ${reasonText(r.reason)}` : ''}.${note}` };
+}
 
 export const mock = {
   keepOnExternalChange: true,
@@ -187,14 +209,18 @@ export const mock = {
       timer: { startedAt: record.startedAt, minutes: ECONOMY.mockTest.minutes },
       submitLabel: 'Submit test',
       onSubmit: (answers) => {
-        const r = submitMockTest(key, answers);
+        const r = submitMockTest(key, answers, dateKey());
+        if (r.error) {
+          renderUnavailable(container);
+          return;
+        }
         renderQuizResult(container, {
-          heading: 'Mock test result', correct: r.correct, total: r.total, passed: r.correct >= r.total / 2,
-          message: r.correct >= r.total * 0.8 ? 'Exam-ready!' : 'Test complete',
-          reward: r.coins > 0 ? { kind: 'coins', html: html`<b>+${r.coins} coins</b> added.` } : { kind: 'muted', html: html`<b>No coins applied</b>${r.reason ? html` — ${reasonText(r.reason)}` : ''}.` },
-          questions, answers, actions
+          heading: r.already ? 'Mock test · already completed' : 'Mock test result', correct: r.correct, total: r.total, passed: r.correct >= r.total / 2,
+          message: r.already ? 'Come back tomorrow' : r.correct >= r.total * 0.8 ? 'Exam-ready!' : 'Test complete',
+          reward: mockReward(r),
+          questions, answers, actions, fresh: true
         });
-        if (r.coins > 0) emit('coins:awarded', { amount: r.coins, from: container.querySelector('[data-testid="quiz-result-coins"]')?.getBoundingClientRect(), message: `Mock test · +${r.coins} coins` });
+        if (r.coins > 0) emit('coins:awarded', { amount: r.coins, from: container.querySelector('[data-testid="quiz-result-coins"]')?.getBoundingClientRect(), message: `Mock test · +${r.coins} coins`, quiet: true });
       }
     });
   }

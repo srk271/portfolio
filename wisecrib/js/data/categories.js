@@ -10,8 +10,8 @@ export const CATEGORIES = Object.freeze([
   { key: 'history', label: 'History & Culture', short: 'History', gradient: ['#6D4C41', '#C08552'], color: '#9A6A4F', glyph: 'vase', examAreas: ['UPSC GS-I', 'SSC GK'] }
 ].map(Object.freeze));
 
-export const CATEGORY_MAP = Object.freeze(Object.fromEntries(CATEGORIES.map((c) => [c.key, c])));
+export const CATEGORY_MAP = Object.freeze(Object.assign(Object.create(null), Object.fromEntries(CATEGORIES.map((c) => [c.key, c]))));
 
 export function getCategory(key) {
-  return CATEGORY_MAP[key] || CATEGORIES[0];
+  return typeof key === 'string' && Object.hasOwn(CATEGORY_MAP, key) ? CATEGORY_MAP[key] : CATEGORIES[0];
 }

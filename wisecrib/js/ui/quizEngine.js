@@ -4,6 +4,7 @@
 import { html, mount, delegate, disposer } from '../dom.js';
 import { fmtClock } from '../format.js';
 import { icon, coinIcon } from './icons.js';
+import { announce } from './toast.js';
 
 const KEYS = 'ABCD';
 
@@ -108,18 +109,20 @@ export function renderQuiz(container, {
 }
 
 // Result screen. reward: { kind: 'coins'|'muted', html } ; actions: html`` buttons/links.
-export function renderQuizResult(container, { heading, correct, total, passed, reward, actions, questions, answers, message }) {
+// fresh: shown right after a submit, so focus moves to the result (the form it replaces had focus)
+// and the score is announced, whether or not coins were awarded.
+export function renderQuizResult(container, { heading, correct, total, passed, reward, actions, questions, answers, message, fresh = false }) {
   const pct = total ? correct / total : 0;
   const R = 52;
   const C = 2 * Math.PI * R;
   mount(container, html`<div class="page quiz-page">
-    <section class="card card-ink result-hero" data-testid="quiz-result">
+    <section class="card card-ink result-hero" data-testid="quiz-result" tabindex="-1" aria-labelledby="quiz-result-title">
       <div class="h-sub" style="color: rgba(255,255,255,.75)">${heading}</div>
       <div class="score-ring" role="img" aria-label="${`Score ${correct} out of ${total}`}">
         <svg viewBox="0 0 120 120"><circle class="ring-track" cx="60" cy="60" r="${R}" fill="none" stroke-width="10"/><circle class="ring-fill" cx="60" cy="60" r="${R}" fill="none" stroke-width="10" stroke-linecap="round" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - pct)).toFixed(1)}"/></svg>
         <div class="score-ring-label" data-testid="quiz-score"><span>${correct}<small>/${total}</small></span></div>
       </div>
-      <div class="result-title">${message || (passed ? 'Nicely done!' : 'Keep going')}</div>
+      <div class="result-title" id="quiz-result-title">${message || (passed ? 'Nicely done!' : 'Keep going')}</div>
     </section>
     <div class="result-reward ${reward.kind === 'muted' ? 'is-muted' : ''}" data-testid="quiz-result-coins">
       ${reward.kind === 'muted' ? icon('info') : coinIcon()}
@@ -141,4 +144,9 @@ export function renderQuizResult(container, { heading, correct, total, passed, r
     </ol>
   </div>`);
   container.scrollTop = 0;
+  if (fresh) {
+    container.querySelector('[data-testid="quiz-result"]').focus({ preventScroll: true });
+    const rewardText = container.querySelector('[data-testid="quiz-result-coins"]').textContent.replace(/\s+/g, ' ').trim();
+    announce(`Score ${correct} of ${total}. ${rewardText}`);
+  }
 }

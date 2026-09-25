@@ -4,13 +4,22 @@ import { icon, coinIcon } from './icons.js';
 
 const MAX = 3;
 
+let queued = [];
+let flushTimer = 0;
+
+// Messages announced within the same short window are read together (e.g. a quiz score followed by
+// its coin toast), so a later message never silently replaces an earlier one.
 export function announce(message) {
   const live = document.getElementById('live');
-  if (!live) return;
+  if (!live || !message) return;
+  queued.push(String(message));
+  if (flushTimer) return;
   live.textContent = '';
   // A fresh text node after a tick makes screen readers re-announce repeated messages.
-  setTimeout(() => {
-    live.textContent = message;
+  flushTimer = setTimeout(() => {
+    live.textContent = queued.join(' ');
+    queued = [];
+    flushTimer = 0;
   }, 40);
 }
 

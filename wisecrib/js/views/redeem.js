@@ -15,6 +15,9 @@ import { copyText } from './wallet.js';
 let tab = 'cash';
 let amount = null;
 
+const TABS = [{ key: 'cash', label: 'Cash (UPI)' }, { key: 'vouchers', label: 'Vouchers' }];
+const TAB_KEYS = { ArrowLeft: -1, ArrowRight: 1, Home: 'first', End: 'last' };
+
 const VOUCHER_ICON = { recharge: 'phone', data: 'bolt', learning: 'target', books: 'book', stationery: 'sliders', charity: 'heart' };
 
 function feeLabel(q) {
@@ -109,10 +112,9 @@ function template(state) {
     <header class="page-head"><h1 class="h-display" data-large-title>Redeem</h1><p class="muted">Everyone can redeem. See every coin, fee and rupee before you confirm.</p></header>
     ${tierBanner(state)}
     <div class="segmented" role="tablist" aria-label="Redemption type">
-      <button type="button" role="tab" aria-selected="${tab === 'cash' ? 'true' : 'false'}" data-action="tab" data-tab="cash" data-testid="tab-cash">Cash (UPI)</button>
-      <button type="button" role="tab" aria-selected="${tab === 'vouchers' ? 'true' : 'false'}" data-action="tab" data-tab="vouchers" data-testid="tab-vouchers">Vouchers</button>
+      ${TABS.map((t) => html`<button type="button" role="tab" id="redeem-tab-${t.key}" aria-controls="redeem-panel" aria-selected="${tab === t.key ? 'true' : 'false'}" tabindex="${tab === t.key ? '0' : '-1'}" data-action="tab" data-tab="${t.key}" data-testid="tab-${t.key}">${t.label}</button>`)}
     </div>
-    <div data-panel>${tab === 'cash' ? cashTemplate(state) : vouchersTemplate(state)}</div>
+    <div data-panel id="redeem-panel" role="tabpanel" aria-labelledby="redeem-tab-${tab}">${tab === 'cash' ? cashTemplate(state) : vouchersTemplate(state)}</div>
     <p class="demo-note">${icon('info')}<span>Simulated: no money moves and codes are not real. <a href="#/how-rewards-work?from=redeem">How rewards work</a></span></p>
   </div>`;
 }
@@ -223,7 +225,23 @@ export function render(container, ctx) {
     container.querySelectorAll('[data-action="preset"]').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.value) === amount)));
   };
 
+  // Tabs (automatic activation): the selected tab keeps focus after the view re-renders.
+  const selectTab = (key) => {
+    tab = key;
+    draw();
+    container.querySelector(`#redeem-tab-${key}`)?.focus({ preventScroll: true });
+  };
+
   draw();
+
+  dispose.add(delegate(container, 'keydown', '[role="tab"]', (e, el) => {
+    const move = TAB_KEYS[e.key];
+    if (move === undefined) return;
+    e.preventDefault();
+    const i = TABS.findIndex((t) => t.key === el.dataset.tab);
+    const next = move === 'first' ? 0 : move === 'last' ? TABS.length - 1 : (i + move + TABS.length) % TABS.length;
+    selectTab(TABS[next].key);
+  }));
 
   dispose.add(delegate(container, 'input', '[data-testid="redeem-cash-amount"]', (e, input) => {
     amount = input.value === '' ? 0 : Math.floor(Number(input.value));
@@ -233,8 +251,7 @@ export function render(container, ctx) {
   dispose.add(delegate(container, 'click', '[data-action]', async (e, el) => {
     const action = el.dataset.action;
     if (action === 'tab') {
-      tab = el.dataset.tab;
-      draw();
+      selectTab(el.dataset.tab);
     } else if (action === 'preset') {
       amount = Number(el.dataset.value);
       container.querySelector('[data-testid="redeem-cash-amount"]').value = String(amount);

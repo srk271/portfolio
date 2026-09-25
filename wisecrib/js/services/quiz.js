@@ -116,27 +116,42 @@ export function startDailyQuiz(key = dateKey()) {
   });
 }
 
-export function submitDailyQuiz(key, answers) {
+// Grades the quiz started under startedKey and credits it to the day it is submitted (creditKey), so a
+// quiz opened at 23:59 and submitted at 00:01 counts for the new day, and never twice for one day.
+// If creditKey's quiz is already complete (or this very quiz was completed in another tab), the attempt
+// is graded but earns nothing ({ already: true }).
+export function submitDailyQuiz(startedKey, answers, creditKey = dateKey()) {
   return update((s) => {
-    const rec = s.dailyQuiz[key];
-    if (!rec) return { error: 'not_started' };
-    const questions = resolveRefs(rec.questionRefs);
+    const started = s.dailyQuiz[startedKey];
+    if (!started) return { error: 'not_started' };
+    const questions = resolveRefs(started.questionRefs);
     const result = grade(questions, answers);
-    if (rec.completedAt) return { ...result, already: true, coins: rec.coins };
+    const existing = s.dailyQuiz[creditKey] || null;
+    const rolledOver = creditKey !== startedKey;
+    if (existing?.completedAt || started.completedAt) return { ...result, already: true, coins: 0, want: 0, key: creditKey, rolledOver };
     const { coinsPerCorrect, perfectBonus } = ECONOMY.dailyQuiz;
     const perfect = result.correct === result.total;
     const want = result.correct * coinsPerCorrect + (perfect ? perfectBonus : 0);
     let coins = 0;
     let reason = null;
     if (want > 0) {
-      const r = awardCapped(s, { type: 'daily_quiz', amount: want, title: `Daily quiz · ${result.correct}/${result.total}${perfect ? ' (perfect)' : ''}`, meta: { date: key } });
+      const r = awardCapped(s, { type: 'daily_quiz', amount: want, title: `Daily quiz · ${result.correct}/${result.total}${perfect ? ' (perfect)' : ''}`, meta: { date: creditKey } });
       coins = r.coins;
       reason = r.reason;
     }
-    Object.assign(rec, { completedAt: Date.now(), correct: result.correct, total: result.total, coins, answers: [...answers] });
+    s.dailyQuiz[creditKey] = {
+      ...(existing || {}),
+      questionRefs: started.questionRefs,
+      startedAt: started.startedAt,
+      completedAt: Date.now(),
+      correct: result.correct,
+      total: result.total,
+      coins,
+      answers: [...answers]
+    };
     s.stats.quizAnswered += result.total;
     s.stats.quizCorrect += result.correct;
-    return { ...result, coins, want, reason, perfect, already: false };
+    return { ...result, coins, want, reason, perfect, already: false, key: creditKey, rolledOver };
   });
 }
 
@@ -154,25 +169,37 @@ export function startMockTest(key = dateKey()) {
   });
 }
 
-export function submitMockTest(key, answers) {
+// Same day-crediting rule as submitDailyQuiz.
+export function submitMockTest(startedKey, answers, creditKey = dateKey()) {
   return update((s) => {
-    const rec = s.mockTest[key];
-    if (!rec) return { error: 'not_started' };
-    const questions = resolveRefs(rec.questionRefs);
+    const started = s.mockTest[startedKey];
+    if (!started) return { error: 'not_started' };
+    const questions = resolveRefs(started.questionRefs);
     const result = grade(questions, answers);
-    if (rec.completedAt) return { ...result, already: true, coins: rec.coins };
-    if (!s.premium.active) return { ...result, locked: true, coins: 0 };
+    const existing = s.mockTest[creditKey] || null;
+    const rolledOver = creditKey !== startedKey;
+    if (existing?.completedAt || started.completedAt) return { ...result, already: true, coins: 0, want: 0, key: creditKey, rolledOver };
+    if (!s.premium.active) return { ...result, locked: true, coins: 0, want: 0, key: creditKey, rolledOver };
     const want = result.correct * ECONOMY.mockTest.coinsPerCorrect;
     let coins = 0;
     let reason = null;
     if (want > 0) {
-      const r = awardCapped(s, { type: 'mock_test', amount: want, title: `Mock test · ${result.correct}/${result.total}`, meta: { date: key } });
+      const r = awardCapped(s, { type: 'mock_test', amount: want, title: `Mock test · ${result.correct}/${result.total}`, meta: { date: creditKey } });
       coins = r.coins;
       reason = r.reason;
     }
-    Object.assign(rec, { completedAt: Date.now(), correct: result.correct, total: result.total, coins, answers: [...answers] });
+    s.mockTest[creditKey] = {
+      ...(existing || {}),
+      questionRefs: started.questionRefs,
+      startedAt: started.startedAt,
+      completedAt: Date.now(),
+      correct: result.correct,
+      total: result.total,
+      coins,
+      answers: [...answers]
+    };
     s.stats.quizAnswered += result.total;
     s.stats.quizCorrect += result.correct;
-    return { ...result, coins, want, reason, already: false };
+    return { ...result, coins, want, reason, already: false, key: creditKey, rolledOver };
   });
 }

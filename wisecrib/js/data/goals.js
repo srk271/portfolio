@@ -47,8 +47,8 @@ export const GOALS = Object.freeze([
   }
 ].map(Object.freeze));
 
-export const GOAL_MAP = Object.freeze(Object.fromEntries(GOALS.map((g) => [g.key, g])));
+export const GOAL_MAP = Object.freeze(Object.assign(Object.create(null), Object.fromEntries(GOALS.map((g) => [g.key, g]))));
 
 export function getGoal(key) {
-  return GOAL_MAP[key] || GOAL_MAP.general;
+  return typeof key === 'string' && Object.hasOwn(GOAL_MAP, key) ? GOAL_MAP[key] : GOAL_MAP.general;
 }

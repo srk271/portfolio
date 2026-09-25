@@ -28,7 +28,9 @@ const SPONSOR = {
   pageturn: { name: 'PageTurn Books', tagline: 'Exam-prep e-books', quizBonus: 5 }
 };
 
-// Dates are fixed relative to APP.contentAnchor (24 Sep 2026) so recency ranking is stable.
+// Dates are authored relative to APP.contentAnchor (24 Sep 2026, 21:00 IST). enrich() then shifts every
+// article by the same amount so the anchor lands on "now" (page load): the newest story is always
+// "11h ago", and "time ago", absolute dates and the recency ranking (see CONTENT_NOW) all agree.
 const [AY, AM, AD] = APP.contentAnchor.slice(0, 10).split('-').map(Number);
 function ago(days, time = '07:30') {
   const d = new Date(Date.UTC(AY, AM - 1, AD - days));
@@ -813,15 +815,21 @@ const RAW = [
   }
 ];
 
+// "Now" for demo content: the moment the app loaded. Recency is measured from here.
+export const CONTENT_NOW = Date.now();
+const SHIFT_MS = CONTENT_NOW - Date.parse(APP.contentAnchor);
+
 function enrich(article) {
   const wordCount = article.body.join(' ').split(/\s+/).filter(Boolean).length;
   const readingTime = Math.max(1, Math.ceil(wordCount / ECONOMY.read.wpm));
-  return Object.freeze({ ...article, wordCount, readingTime });
+  const publishedAt = new Date(Date.parse(article.publishedAt) + SHIFT_MS).toISOString();
+  return Object.freeze({ ...article, publishedAt, wordCount, readingTime });
 }
 
 export const ARTICLES = Object.freeze(RAW.map(enrich));
-export const ARTICLE_MAP = Object.freeze(Object.fromEntries(ARTICLES.map((a) => [a.id, a])));
+// Null-prototype map: ids like "constructor" or "__proto__" (e.g. from a URL) never hit Object.prototype.
+export const ARTICLE_MAP = Object.freeze(Object.assign(Object.create(null), Object.fromEntries(ARTICLES.map((a) => [a.id, a]))));
 
 export function getArticle(id) {
-  return ARTICLE_MAP[id] || null;
+  return typeof id === 'string' && Object.hasOwn(ARTICLE_MAP, id) ? ARTICLE_MAP[id] : null;
 }

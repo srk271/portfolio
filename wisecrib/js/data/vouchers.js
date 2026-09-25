@@ -42,4 +42,8 @@ export const VOUCHERS = Object.freeze([
   }
 ].map(Object.freeze));
 
-export const VOUCHER_MAP = Object.freeze(Object.fromEntries(VOUCHERS.map((v) => [v.id, v])));
+export const VOUCHER_MAP = Object.freeze(Object.assign(Object.create(null), Object.fromEntries(VOUCHERS.map((v) => [v.id, v]))));
+
+export function getVoucher(id) {
+  return typeof id === 'string' && Object.hasOwn(VOUCHER_MAP, id) ? VOUCHER_MAP[id] : null;
+}
