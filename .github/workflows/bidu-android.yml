@@ -1,0 +1,98 @@
+name: bidu-android
+
+on:
+  push:
+    paths:
+      - "bidu/**"
+      - ".github/workflows/bidu-android.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bidu-android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: bidu
+    env:
+      BIDU_KEYSTORE_PASSWORD: ${{ secrets.BIDU_KEYSTORE_PASSWORD }}
+      BIDU_KEY_ALIAS: ${{ secrets.BIDU_KEY_ALIAS }}
+      BIDU_KEY_PASSWORD: ${{ secrets.BIDU_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Install Android SDK components
+        run: |
+          set -euo pipefail
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME}}"
+          SDKMANAGER="$SDK/cmdline-tools/latest/bin/sdkmanager"
+          [ -x "$SDKMANAGER" ] || SDKMANAGER="$(command -v sdkmanager)"
+          yes | "$SDKMANAGER" --licenses > /dev/null || true
+          "$SDKMANAGER" --install "platforms;android-36" "build-tools;36.0.0" "platform-tools" > /dev/null
+
+      - name: Build and test
+        run: ./gradlew :core:test :app:testDebugUnitTest :app:assembleDebug --stacktrace --no-daemon
+
+      - name: Decode release keystore
+        id: keystore
+        env:
+          BIDU_KEYSTORE_BASE64: ${{ secrets.BIDU_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          if [ -n "${BIDU_KEYSTORE_BASE64}" ] && [ -n "${BIDU_KEYSTORE_PASSWORD}" ] && [ -n "${BIDU_KEY_ALIAS}" ] && [ -n "${BIDU_KEY_PASSWORD}" ]; then
+            KS="$RUNNER_TEMP/bidu-release.jks"
+            printf '%s' "$BIDU_KEYSTORE_BASE64" | base64 -d > "$KS"
+            echo "BIDU_KEYSTORE_PATH=$KS" >> "$GITHUB_ENV"
+            echo "signing=true" >> "$GITHUB_OUTPUT"
+            echo "Release signing enabled."
+          else
+            echo "signing=false" >> "$GITHUB_OUTPUT"
+            echo "Keystore secrets not configured; release APK will be unsigned."
+          fi
+
+      - name: Assemble release
+        run: ./gradlew :app:assembleRelease --stacktrace --no-daemon
+
+      - name: Remove decoded keystore
+        if: always() && steps.keystore.outputs.signing == 'true'
+        run: rm -f "$RUNNER_TEMP/bidu-release.jks"
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: bidu-debug-apk
+          path: bidu/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      - name: Upload release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.keystore.outputs.signing == 'true' && 'bidu-release-apk' || 'bidu-release-apk-unsigned' }}
+          path: bidu/app/build/outputs/apk/release/*.apk
+          if-no-files-found: warn
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bidu-test-reports
+          path: |
+            bidu/core/build/reports/tests/**
+            bidu/core/build/test-results/**
+            bidu/app/build/reports/tests/**
+            bidu/app/build/test-results/**
+          if-no-files-found: ignore
