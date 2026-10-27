@@ -199,16 +199,22 @@ class DefaultVoiceController(
     }
 
     private suspend fun recognize(session: CaptureSession, timeoutMillis: Long): CaptureResult {
-        val languageTag = settings.current().recognizerLanguageTag
+        val current = settings.current()
+        val languageTag = current.recognizerLanguageTag
+        val preferOffline = current.preferOfflineRecognition
         val onPartial: (String) -> Unit = { text -> _state.update { it.copy(partialTranscript = text) } }
         var lastFailure: String? = null
+        // true = on-device recognizer. The preferred engine goes first; the other one is the fallback.
         val engines = buildList {
-            if (systemRecognizer.isAvailable()) add(false)
-            if (systemRecognizer.isOnDeviceAvailable()) add(true)
+            val regular = systemRecognizer.isAvailable()
+            val onDevice = systemRecognizer.isOnDeviceAvailable()
+            if (preferOffline && onDevice) add(true)
+            if (regular) add(false)
+            if (!preferOffline && onDevice) add(true)
         }
         for (onDevice in engines) {
             if (session.cancelled) return CaptureResult.Failed(CANCELLED_REASON)
-            when (val outcome = systemRecognizer.recognize(onDevice, languageTag, timeoutMillis, session, onPartial)) {
+            when (val outcome = systemRecognizer.recognize(onDevice, preferOffline, languageTag, timeoutMillis, session, onPartial)) {
                 is SystemCommandRecognizer.Outcome.Text -> return CaptureResult.Text(outcome.text, languageTag)
                 SystemCommandRecognizer.Outcome.NoSpeech -> return CaptureResult.NoSpeech
                 SystemCommandRecognizer.Outcome.Cancelled -> return CaptureResult.Failed(CANCELLED_REASON)

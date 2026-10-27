@@ -1,5 +1,6 @@
 package dev.bidu.app.system
 
+import android.app.AlarmManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -20,13 +21,15 @@ import kotlinx.coroutines.withTimeoutOrNull
  * After a reboot or an app update: re-arms reminders and, if the owner had listening on, posts
  * "Bidu paused — tap to resume". The microphone service is never started from here; Android 14+
  * forbids that from BOOT_COMPLETED, and a tap on the notification is the user interaction that
- * makes the start legitimate.
+ * makes the start legitimate. When exact-alarm access is granted, reminders are re-armed as exact.
  */
 class SystemEventReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         val action = intent.action
-        if (action != Intent.ACTION_BOOT_COMPLETED && action != Intent.ACTION_MY_PACKAGE_REPLACED) return
+        val restart = action == Intent.ACTION_BOOT_COMPLETED || action == Intent.ACTION_MY_PACKAGE_REPLACED
+        val exactAlarmsChanged = action == AlarmManager.ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED
+        if (!restart && !exactAlarmsChanged) return
         val container = context.biduContainer
         val pending = goAsync()
         container.appScope.launch {
@@ -41,8 +44,7 @@ class SystemEventReceiver : BroadcastReceiver() {
                         null
                     }
                 }
-                val settings = loadedSettings(container.settings)
-                if (settings.listeningEnabled && !BiduForegroundService.running.value) {
+                if (restart && loadedSettings(container.settings).listeningEnabled && !BiduForegroundService.running.value) {
                     val posted = ListeningNotification.postResume(context)
                     if (!posted) Log.w(TAG, "resume notification not shown (notifications blocked)")
                 }
@@ -59,12 +61,15 @@ class SystemEventReceiver : BroadcastReceiver() {
     }
 
     /**
-     * The settings StateFlow starts from defaults until DataStore has been read. A changed value
-     * means the stored settings arrived; no change within the window means the stored values
-     * equal the current snapshot (or were already loaded), so the snapshot is correct either way.
+     * The settings snapshot can still hold defaults (listening off) if the first DataStore read was
+     * slow. In that case wait briefly for the stored values; no change within the window means the
+     * snapshot already equals what is stored.
      */
-    private suspend fun loadedSettings(repository: SettingsRepository): BiduSettings =
-        withTimeoutOrNull(SETTINGS_WAIT_MS) { repository.settings.drop(1).first() } ?: repository.current()
+    private suspend fun loadedSettings(repository: SettingsRepository): BiduSettings {
+        val current = repository.current()
+        if (current.listeningEnabled) return current
+        return withTimeoutOrNull(SETTINGS_WAIT_MS) { repository.settings.drop(1).first() } ?: repository.current()
+    }
 
     private companion object {
         const val TAG = "Bidu/SystemEvent"

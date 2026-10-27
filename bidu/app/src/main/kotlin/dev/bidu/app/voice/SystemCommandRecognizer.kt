@@ -2,6 +2,7 @@ package dev.bidu.app.voice
 
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
@@ -30,19 +31,22 @@ internal class SystemCommandRecognizer(private val context: Context) {
 
     fun isAvailable(): Boolean = SpeechRecognizer.isRecognitionAvailable(context)
 
-    fun isOnDeviceAvailable(): Boolean = SpeechRecognizer.isOnDeviceRecognitionAvailable(context)
+    /** createOnDeviceSpeechRecognizer exists from API 31, but availability can only be queried from API 33. */
+    fun isOnDeviceAvailable(): Boolean =
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && SpeechRecognizer.isOnDeviceRecognitionAvailable(context)
 
     suspend fun recognize(
         onDevice: Boolean,
+        preferOffline: Boolean,
         languageTag: String,
         timeoutMillis: Long,
         session: CaptureSession,
         onPartial: (String) -> Unit,
     ): Outcome = withContext(Dispatchers.Main.immediate) {
-        val first = runOnce(onDevice, languageTag, timeoutMillis, session, onPartial)
+        val first = runOnce(onDevice, preferOffline, languageTag, timeoutMillis, session, onPartial)
         if (first is Outcome.Unavailable && first.busy && !session.cancelled) {
             delay(BUSY_RETRY_DELAY_MS)
-            val second = runOnce(onDevice, languageTag, timeoutMillis, session, onPartial)
+            val second = runOnce(onDevice, preferOffline, languageTag, timeoutMillis, session, onPartial)
             if (second is Outcome.Unavailable && second.busy) Outcome.Unavailable("recognizer busy") else second
         } else {
             first
@@ -51,6 +55,7 @@ internal class SystemCommandRecognizer(private val context: Context) {
 
     private suspend fun runOnce(
         onDevice: Boolean,
+        preferOffline: Boolean,
         languageTag: String,
         timeoutMillis: Long,
         session: CaptureSession,
@@ -94,7 +99,7 @@ internal class SystemCommandRecognizer(private val context: Context) {
         })
         val removeCancelHook = session.onCancel { done.complete(Outcome.Cancelled) }
         try {
-            recognizer.startListening(buildIntent(languageTag, onDevice))
+            recognizer.startListening(buildIntent(languageTag, onDevice || preferOffline))
             val outcome = withTimeoutOrNull(timeoutMillis) { done.await() }
             if (outcome != null) return outcome
             // Overall time is up: ask for a final result from what was heard so far.
@@ -115,14 +120,14 @@ internal class SystemCommandRecognizer(private val context: Context) {
         }
     }
 
-    private fun buildIntent(languageTag: String, onDevice: Boolean): Intent =
+    private fun buildIntent(languageTag: String, preferOffline: Boolean): Intent =
         Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageTag)
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
             putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, context.packageName)
-            putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, onDevice)
+            putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, preferOffline)
             // Honoured by some recognition services only; harmless where ignored.
             putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, COMPLETE_SILENCE_MS)
             putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, POSSIBLY_COMPLETE_SILENCE_MS)

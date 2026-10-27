@@ -126,7 +126,18 @@ class DefaultAssistantController(
     private var shownConfirmationId: String? = null
 
     init {
-        scope.launch { for (item in queue) process(item) }
+        scope.launch {
+            for (item in queue) {
+                // One bad request must never stop the queue (or crash the app scope).
+                try {
+                    process(item)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Log.w(TAG, "request handling failed: ${e.javaClass.simpleName}")
+                }
+            }
+        }
         scope.launch { voice.events.collect { onVoiceEvent(it) } }
         scope.launch { engine.events.collect { onEngineEvent(it) } }
         scope.launch { confirmations.pending.collect { onPendingConfirmation(it) } }
@@ -325,7 +336,16 @@ class DefaultAssistantController(
     private suspend fun say(text: String, language: Language): SpeakResult {
         if (text.isBlank()) return SpeakResult.SPOKEN
         return audioTurn.withLock {
-            withWakeHold { speaker.speak(text, language) }
+            withWakeHold {
+                try {
+                    speaker.speak(text, language)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Log.w(TAG, "speech output failed: ${e.javaClass.simpleName}")
+                    SpeakResult.FAILED
+                }
+            }
         }
     }
 
@@ -360,7 +380,16 @@ class DefaultAssistantController(
         addActivity(ActivityKind.STATE, request.prompt)
         val origin = currentRequest?.origin
         if (origin != null && origin != RequestOrigin.TEXT) {
-            confirmationJob = scope.launch { askByVoice(request) }
+            confirmationJob = scope.launch {
+                try {
+                    askByVoice(request)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    // The notification and the in-app dialog still answer the confirmation.
+                    Log.w(TAG, "spoken confirmation failed: ${e.javaClass.simpleName}")
+                }
+            }
         }
     }
 

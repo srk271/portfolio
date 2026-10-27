@@ -134,6 +134,20 @@ object ListeningNotification {
         )
     }
 
+    /** First foreground notification, built without touching the dependency graph; replaced within ~150 ms. */
+    fun starting(context: Context): Notification = foreground(
+        context,
+        ForegroundContent(
+            title = context.getString(R.string.app_name),
+            text = context.getString(R.string.voice_notification_starting),
+            detail = null,
+            showTalk = false,
+            showCancel = false,
+            showPause = false,
+            showResume = false,
+        ),
+    )
+
     fun foreground(context: Context, content: ForegroundContent): Notification {
         val builder = Notification.Builder(context, NotificationChannels.LISTENING)
             .setSmallIcon(R.drawable.ic_stat_bidu)

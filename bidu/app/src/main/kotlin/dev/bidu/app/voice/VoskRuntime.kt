@@ -99,7 +99,7 @@ internal object VoskJson {
 /**
  * Decides whether a final grammar result is a wake phrase. Deliberately strict: the whole
  * utterance must be exactly one configured variant (no "[unk]" anywhere, so a phrase buried in
- * other speech never fires), and the partials leading up to it must be consistent with it.
+ * other speech never fires), and the last partial before it must be consistent with it.
  */
 internal class WakeMatcher(phrases: List<WakePhrase>) {
     data class Match(val phrase: String, val heard: String)
@@ -117,8 +117,10 @@ internal class WakeMatcher(phrases: List<WakePhrase>) {
     fun match(finalTokens: List<String>, lastPartialTokens: List<String>): Match? {
         if (finalTokens.isEmpty() || VoskJson.UNK in finalTokens) return null
         val hit = variants.firstOrNull { it.second == finalTokens } ?: return null
+        // A very short utterance can end before any partial arrives; a partial that disagrees with
+        // the final result means the decoder was unsure, so it does not count.
         val partial = lastPartialTokens.filter { it != VoskJson.UNK }
-        if (partial.isEmpty() || partial.size > finalTokens.size) return null
+        if (partial.size > finalTokens.size) return null
         if (finalTokens.subList(0, partial.size) != partial) return null
         return Match(phrase = hit.first, heard = finalTokens.joinToString(" "))
     }

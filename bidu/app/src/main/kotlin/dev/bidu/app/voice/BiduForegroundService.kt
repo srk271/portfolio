@@ -10,6 +10,7 @@ import android.content.pm.ServiceInfo
 import android.os.IBinder
 import android.os.SystemClock
 import android.util.Log
+import androidx.core.app.ServiceCompat
 import dev.bidu.app.AppContainer
 import dev.bidu.app.biduContainer
 import dev.bidu.app.notifications.NotificationIds
@@ -38,6 +39,7 @@ class BiduForegroundService : Service() {
 
     private var scope: CoroutineScope? = null
     private var notificationJob: Job? = null
+    private var lastNotification: Notification? = null
     private var inForeground = false
     private var startFailed = false
 
@@ -50,19 +52,36 @@ class BiduForegroundService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val action = intent?.action ?: ACTION_START
+        val wasForeground = inForeground
+        // startForeground comes first: Android allows only a few seconds after startForegroundService.
+        if (!enterForeground()) return START_NOT_STICKY
         val container = biduContainer
-        if (!enterForeground(container)) return START_NOT_STICKY
-        stopRequested.set(false)
         when (action) {
-            ACTION_PAUSE -> snooze(container)
-            ACTION_REFRESH -> Unit
+            ACTION_PAUSE -> {
+                stopRequested.set(false)
+                snooze(container)
+            }
+            ACTION_REFRESH -> if (!wasForeground) {
+                // The notification of an instance that is gone was swiped: only keep running if listening is wanted.
+                if (container.settings.current().listeningEnabled) {
+                    stopRequested.set(false)
+                    container.voice.startWakeListening()
+                } else {
+                    stopRequested.set(true)
+                    stopSelf()
+                }
+            }
             ACTION_RESUME -> {
+                stopRequested.set(false)
                 clearSnooze()
                 container.voice.startWakeListening()
                 // Started from the resume notification: remember that listening is wanted again.
-                scope?.launch { container.settings.update { it.copy(listeningEnabled = true) } }
+                container.appScope.launch { container.settings.update { it.copy(listeningEnabled = true) } }
             }
-            else -> if (_snoozedUntil.value == null) container.voice.startWakeListening()
+            else -> {
+                stopRequested.set(false)
+                if (_snoozedUntil.value == null) container.voice.startWakeListening()
+            }
         }
         return START_STICKY
     }
@@ -79,6 +98,7 @@ class BiduForegroundService : Service() {
         container.voice.stopWakeListening()
         clearSnooze()
         notificationJob = null
+        lastNotification = null
         scope?.cancel()
         scope = null
         if (inForeground) stopForeground(STOP_FOREGROUND_REMOVE)
@@ -91,19 +111,24 @@ class BiduForegroundService : Service() {
         super.onDestroy()
     }
 
-    /** Must run first in onStartCommand: Android allows only a few seconds before startForeground. */
-    private fun enterForeground(container: AppContainer): Boolean {
+    /** Must run first in onStartCommand. Touches nothing slow before startForeground. */
+    private fun enterForeground(): Boolean {
         if (inForeground) {
-            ListeningNotification.post(this, NotificationIds.FOREGROUND, buildNotification(container))
+            ListeningNotification.post(this, NotificationIds.FOREGROUND, lastNotification ?: ListeningNotification.starting(this))
             return true
         }
         try {
-            startForeground(NotificationIds.FOREGROUND, buildNotification(container), ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE)
+            ServiceCompat.startForeground(
+                this,
+                NotificationIds.FOREGROUND,
+                ListeningNotification.starting(this),
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE,
+            )
         } catch (e: ForegroundServiceStartNotAllowedException) {
             return failStart("foreground start not allowed from background")
         } catch (e: SecurityException) {
             return failStart("microphone foreground service refused: ${e.javaClass.simpleName}")
-        } catch (e: IllegalStateException) {
+        } catch (e: RuntimeException) {
             return failStart("foreground start failed: ${e.javaClass.simpleName}")
         }
         inForeground = true
@@ -119,7 +144,7 @@ class BiduForegroundService : Service() {
         startFailed = false
         ListeningNotification.cancel(this, NotificationIds.RESUME)
         _running.value = true
-        observeState(container)
+        observeState(biduContainer)
         return true
     }
 
@@ -147,21 +172,11 @@ class BiduForegroundService : Service() {
             }.collectLatest { content ->
                 // Coalesce bursts of state changes; the platform rate-limits notification updates.
                 delay(UPDATE_DEBOUNCE_MS)
-                ListeningNotification.post(this@BiduForegroundService, NotificationIds.FOREGROUND, ListeningNotification.foreground(this@BiduForegroundService, content))
+                val notification = ListeningNotification.foreground(this@BiduForegroundService, content)
+                lastNotification = notification
+                ListeningNotification.post(this@BiduForegroundService, NotificationIds.FOREGROUND, notification)
             }
         }
-    }
-
-    private fun buildNotification(container: AppContainer): Notification {
-        val content = ListeningNotification.foregroundContent(
-            context = this,
-            ui = null,
-            voice = container.voice.state.value,
-            phrases = container.settings.current().wakePhrases,
-            snoozedUntil = _snoozedUntil.value,
-            speaking = false,
-        )
-        return ListeningNotification.foreground(this, content)
     }
 
     private fun snooze(container: AppContainer) {
