@@ -32,6 +32,8 @@ data class BiduSettings(
     val voskModelConsent: Boolean = false,
     /** BCP-47 tag handed to the system SpeechRecognizer for command capture. */
     val recognizerLanguageTag: String = "en-IN",
+    /** Ask the system SpeechRecognizer to stay on-device (EXTRA_PREFER_OFFLINE) for command capture. */
+    val preferOfflineRecognition: Boolean = false,
     val responseLanguage: Language = Language.HINGLISH,
     val casualTone: Boolean = true,
     /** TTS engine package and voice name; null means the system default. */

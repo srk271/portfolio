@@ -75,7 +75,8 @@ class AppContainer(private val app: Application) {
     val notes: NoteRepository by lazy { RoomNoteRepository(database.noteDao(), clock) }
     val reminders: ReminderRepository by lazy { RoomReminderRepository(database.reminderDao(), clock) }
     val history: HistoryRepository by lazy { RoomHistoryRepository(database.historyDao()) }
-    val memory: MemoryStore by lazy { RoomMemoryStore(database.memoryDao(), clock) }
+    /** Typed concretely so the UI can use [RoomMemoryStore.observeAll]; it is still the agent's [MemoryStore]. */
+    val memory: RoomMemoryStore by lazy { RoomMemoryStore(database.memoryDao(), clock) }
     val actionLog: ActionLogRepository by lazy { RoomActionLogRepository(database.actionLogDao()) }
 
     // Platform access (WS3).
@@ -99,7 +100,8 @@ class AppContainer(private val app: Application) {
     val nlu: Nlu by lazy { HinglishNlu() }
     val policy: AutonomyPolicy by lazy { DefaultAutonomyPolicy() }
     val composer: ResponseComposer by lazy { HinglishResponseComposer() }
-    val cloudPlanner: Planner by lazy { AnthropicPlanner(settings, secrets) }
+    /** Typed concretely so Settings can offer [AnthropicPlanner.listModels] as a model picker. */
+    val cloudPlanner: AnthropicPlanner by lazy { AnthropicPlanner(settings, secrets) }
     val planner: Planner by lazy {
         FallbackPlanner(
             offline = RulePlanner(),

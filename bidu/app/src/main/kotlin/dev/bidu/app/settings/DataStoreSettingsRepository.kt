@@ -81,6 +81,7 @@ class DataStoreSettingsRepository(context: Context, scope: CoroutineScope) : Set
         val WAKE_COOLDOWN_MILLIS = longPreferencesKey("wake_cooldown_millis")
         val VOSK_MODEL_CONSENT = booleanPreferencesKey("vosk_model_consent")
         val RECOGNIZER_LANGUAGE_TAG = stringPreferencesKey("recognizer_language_tag")
+        val PREFER_OFFLINE_RECOGNITION = booleanPreferencesKey("prefer_offline_recognition")
         val RESPONSE_LANGUAGE = stringPreferencesKey("response_language")
         val CASUAL_TONE = booleanPreferencesKey("casual_tone")
         val TTS_ENGINE = stringPreferencesKey("tts_engine")
@@ -107,6 +108,7 @@ class DataStoreSettingsRepository(context: Context, scope: CoroutineScope) : Set
             wakeCooldownMillis = p[Keys.WAKE_COOLDOWN_MILLIS] ?: DEFAULTS.wakeCooldownMillis,
             voskModelConsent = p[Keys.VOSK_MODEL_CONSENT] ?: DEFAULTS.voskModelConsent,
             recognizerLanguageTag = p[Keys.RECOGNIZER_LANGUAGE_TAG] ?: DEFAULTS.recognizerLanguageTag,
+            preferOfflineRecognition = p[Keys.PREFER_OFFLINE_RECOGNITION] ?: DEFAULTS.preferOfflineRecognition,
             responseLanguage = p[Keys.RESPONSE_LANGUAGE]?.let { name -> Language.entries.firstOrNull { it.name == name } }
                 ?: DEFAULTS.responseLanguage,
             casualTone = p[Keys.CASUAL_TONE] ?: DEFAULTS.casualTone,
@@ -129,6 +131,7 @@ class DataStoreSettingsRepository(context: Context, scope: CoroutineScope) : Set
             p[Keys.WAKE_COOLDOWN_MILLIS] = s.wakeCooldownMillis
             p[Keys.VOSK_MODEL_CONSENT] = s.voskModelConsent
             p[Keys.RECOGNIZER_LANGUAGE_TAG] = s.recognizerLanguageTag
+            p[Keys.PREFER_OFFLINE_RECOGNITION] = s.preferOfflineRecognition
             p[Keys.RESPONSE_LANGUAGE] = s.responseLanguage.name
             p[Keys.CASUAL_TONE] = s.casualTone
             p.setOrRemove(Keys.TTS_ENGINE, s.ttsEngine)

@@ -19,6 +19,9 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
 
+    <!-- "alarm laga" hands off to the clock app via AlarmClock.ACTION_SET_ALARM, which requires this. -->
+    <uses-permission android:name="com.android.alarm.permission.SET_ALARM" />
+
     <!-- Contacts lookup for "mummy ko call kar"; dialling uses ACTION_DIAL, so no CALL_PHONE. -->
     <uses-permission android:name="android.permission.READ_CONTACTS" />
 
@@ -70,6 +73,8 @@
         <intent>
             <action android:name="android.intent.action.TTS_SERVICE" />
         </intent>
+        <!-- Samsung Device Care, opened from setup to exempt Bidu from One UI's sleeping-apps list. -->
+        <package android:name="com.samsung.android.lool" />
     </queries>
 
     <application
@@ -114,6 +119,7 @@
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
             </intent-filter>
         </receiver>
 

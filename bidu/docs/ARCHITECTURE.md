@@ -11,7 +11,9 @@ Two Gradle modules, manual DI, local-first storage, optional consented cloud rea
 | `:app` (Android, minSdk 31, target/compile 36) | CI only (`.github/workflows/bidu-android.yml`) | foreground service, Vosk/SpeechRecognizer/TTS, Room, DataStore, Keystore, Android tool impls, cloud adapter, Compose UI |
 
 `settings.gradle.kts` includes `:app` only when an Android SDK is detected (`ANDROID_HOME`/`ANDROID_SDK_ROOT` or `sdk.dir`);
-without one neither Google Maven nor AGP is ever resolved. Versions: AGP 8.13.0, Gradle wrapper 8.14.3, Kotlin 2.2.21,
+without one neither Google Maven nor AGP is ever resolved. All Gradle plugins share the root build script classloader (the
+Kotlin Android plugin and KSP need AGP classes): the root `build.gradle.kts` puts AGP on its `buildscript` classpath only when
+`:app` is included, and `app/build.gradle.kts` applies `com.android.application` by id without a version. Versions: AGP 8.13.0, Gradle wrapper 8.14.3, Kotlin 2.2.21,
 KSP 2.2.21-2.0.5, coroutines 1.10.2, Compose BOM 2025.09.00, Room 2.7.2, DataStore 1.1.7, vosk-android 0.3.75 + jna 5.18.1@aar, JUnit 5.13.4 (core) / JUnit 4 (app).
 
 ```
@@ -202,7 +204,14 @@ listed in section 1, `docs/**`, `.github/workflows/bidu-android.yml`.
 
 ## 10. Build and CI
 
-Local: `cd bidu && ./gradlew :core:build`. CI (`bidu-android.yml`): JDK 21, platform 36 + build-tools 36.0.0,
-`:core:test :app:testDebugUnitTest :app:assembleDebug`, then `:app:assembleRelease` (minify + shrinkResources, Vosk/JNA keep rules;
-signed only when `BIDU_KEYSTORE_BASE64/PASSWORD/KEY_ALIAS/KEY_PASSWORD` secrets exist). Artifacts: `bidu-debug-apk`,
-`bidu-release-apk[-unsigned]`, `bidu-test-reports`. Debug builds install as `dev.bidu.app.debug`.
+Local: `cd bidu && ./gradlew :core:build`. CI (`bidu-android.yml`, concurrency group `bidu-<ref>`, cancel in progress): JDK 21,
+platform 36 + build-tools 36.0.0, four jobs:
+- `build` — `:app:assembleDebug`, uploads artifact `bidu-debug-apk` (the critical path; nothing else gates it).
+- `test` — `:core:test :app:testDebugUnitTest`, uploads `bidu-test-reports`. App unit tests never touch the network.
+- `release` — `:app:assembleRelease` (minify + shrinkResources, Vosk/JNA keep rules; signed only when
+  `BIDU_KEYSTORE_BASE64/PASSWORD/KEY_ALIAS/KEY_PASSWORD` secrets exist), uploads `bidu-release-apk[-unsigned]`.
+- `publish` — after a successful `build`, on push to the working branch or `workflow_dispatch`: moves tag `bidu-latest` to the
+  commit and creates/updates the public pre-release "Bidu (latest debug build)" with asset `bidu-debug.apk`
+  (notes: short SHA, build date, "Debug build for sideloading; not Play-signed").
+
+Debug builds install as `dev.bidu.app.debug`.
