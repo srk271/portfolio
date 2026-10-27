@@ -51,6 +51,30 @@ internal class Utterance(val tokens: List<Token>) {
     }
 
     fun surface(indices: Collection<Int>): String = indices.sorted().joinToString(" ") { tokens[it].surface }
+
+    /** Dictated text: surfaces plus the auxiliaries dropped inside the span ("submit kar dena hai"). */
+    fun payload(indices: Collection<Int>): String {
+        val sorted = indices.sorted()
+        return sorted.joinToString(" ") { i ->
+            val t = tokens[i]
+            if (i == sorted.last() || t.tail.isEmpty()) t.surface else (listOf(t.surface) + t.tail).joinToString(" ")
+        }
+    }
+
+    /** Longest contiguous run of indices whose canon is not in [stop]. */
+    fun longestRun(stop: Set<String>, exclude: Set<Int> = emptySet()): List<Int> {
+        var best = emptyList<Int>()
+        var cur = ArrayList<Int>()
+        for (i in canon.indices) {
+            if (i in exclude || canon[i] in stop) {
+                if (cur.size > best.size) best = cur
+                cur = ArrayList()
+            } else {
+                cur.add(i)
+            }
+        }
+        return if (cur.size > best.size) cur else best
+    }
     fun spoken(indices: Collection<Int>): String = indices.sorted().joinToString(" ") { tokens[it].spoken }
 }
 

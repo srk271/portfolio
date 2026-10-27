@@ -30,6 +30,7 @@ object BuiltinTools {
     const val REMEMBER_NAME = "remember"
     const val RECALL_NAME = "recall"
     const val STOP_LISTENING_NAME = "stop_listening"
+    const val FORGET_NAME = "forget"
 
     val OPEN_APP = ToolSpec(
         name = OPEN_APP_NAME,
@@ -260,10 +261,19 @@ object BuiltinTools {
         examples = listOf("bidu so ja", "stop listening", "band ho ja"),
     )
 
+    val FORGET = ToolSpec(
+        name = FORGET_NAME,
+        description = "Delete a fact from memory (e.g. home address, contact alias). Destructive: policy asks first. VERIFIED after the fact is gone.",
+        params = listOf(ParamSpec("key", ParamType.STRING, "Memory key to forget, see MemoryKeys", maxLength = 100)),
+        risk = RiskLevel.HIGH,
+        timeoutMillis = 3_000,
+        examples = listOf("ghar ka address bhool ja", "forget my office address"),
+    )
+
     val all: List<ToolSpec> = listOf(
         OPEN_APP, TELL_TIME, TELL_DATE, CREATE_REMINDER, LIST_REMINDERS, CANCEL_REMINDER,
         CREATE_NOTE, SEARCH_NOTES, DELETE_NOTE, FIND_CONTACT, DIAL_CONTACT, SET_ALARM, SET_TIMER,
-        FLASHLIGHT, WEB_SEARCH, BATTERY_LEVEL, BOOK_CAB, MOVIE_TICKETS, REMEMBER, RECALL, STOP_LISTENING,
+        FLASHLIGHT, WEB_SEARCH, BATTERY_LEVEL, BOOK_CAB, MOVIE_TICKETS, REMEMBER, RECALL, STOP_LISTENING, FORGET,
     )
 
     fun byName(name: String): ToolSpec? = all.firstOrNull { it.name == name }

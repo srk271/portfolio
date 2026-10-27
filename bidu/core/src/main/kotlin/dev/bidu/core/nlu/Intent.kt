@@ -42,6 +42,8 @@ sealed interface Intent {
     ) : Intent
     data class Remember(val key: String, val value: String) : Intent
     data class Recall(val key: String) : Intent
+    /** "ghar ka address bhool ja": delete a memory fact. [key] is a MemoryKeys key or the spoken subject. */
+    data class Forget(val key: String) : Intent
     data object StopListening : Intent
     /** "haan" / "nahi" while a confirmation or question is pending. */
     data class Confirm(val approved: Boolean) : Intent

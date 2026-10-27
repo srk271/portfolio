@@ -65,6 +65,10 @@ internal object Lexicon {
         group("sakta", "sakte", "sakti", "sakoge", "sakogi", "सकते", "सकता", "सकती")
         group("rehta", "rehti", "rehte", "rahta", "rahti", "रहता", "रहती", "रहते")
         group("chahiye", "chaiye", "chahie", "चाहिए")
+        group("bhool", "bhul", "bhoolja", "bhooljao", "bhulja", "bhoolna", "bhulna", "भूल", "भूलो", "भूलना", "भूलजा")
+        group("bhula", "bhulao", "bhulado", "bhulade", "भुला", "भुलाओ")
+        group("matlab", "mtlb", "yaani", "yani", "मतलब", "यानी")
+        group("forget", "4get")
         // Function words.
         group("ko", "को")
         group("ka", "का")

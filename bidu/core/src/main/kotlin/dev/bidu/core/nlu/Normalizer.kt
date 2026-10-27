@@ -4,8 +4,11 @@ import dev.bidu.core.model.Language
 import dev.bidu.core.model.Script
 import java.util.Locale
 
-/** One word of an utterance. [surface] keeps the user's spelling for payloads; rules match [canon]. */
-internal data class Token(val surface: String, val canon: String) {
+/**
+ * One word of an utterance. [surface] keeps the user's spelling for payloads; rules match [canon].
+ * [tail] holds auxiliaries dropped right after it ("kar *dena*"), so dictated text can be restored.
+ */
+internal data class Token(val surface: String, val canon: String, val tail: List<String> = emptyList()) {
     val isDevanagari: Boolean get() = surface.any(TextFolding::isDevanagari)
 
     /** What to put in a name slot: the romanised form for Devanagari words the lexicon knows (मम्मी -> mummy). */
@@ -116,7 +119,10 @@ internal object Normalizer {
             }
             // "kar do" drops the auxiliary, "book kar do tickets" keeps the number.
             val countsSomething = c == "do" && tokens.getOrNull(i + 1)?.canon in Lexicon.COUNTED_NOUNS
-            if (c in Lexicon.AUXILIARIES && !countsSomething && out.lastOrNull()?.canon in Lexicon.VERBS) continue
+            if (c in Lexicon.AUXILIARIES && !countsSomething && out.lastOrNull()?.canon in Lexicon.VERBS) {
+                out[out.lastIndex] = out.last().let { it.copy(tail = it.tail + token.surface) }
+                continue
+            }
             out += token
         }
         return out
