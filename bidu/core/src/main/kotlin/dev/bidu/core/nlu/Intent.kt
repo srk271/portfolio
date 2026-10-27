@@ -30,7 +30,16 @@ sealed interface Intent {
     data class WebSearch(val query: String) : Intent
     data object BatteryLevel : Intent
     data class BookCab(val destination: String?, val provider: CabProvider = CabProvider.ANY) : Intent
-    data class MovieTickets(val query: String?, val city: String? = null) : Intent
+    data class MovieTickets(
+        val query: String?,
+        val city: String? = null,
+        /** Cinema as spoken ("INOX Marine Lines"). Informational: the user picks the show in the booking app. */
+        val venue: String? = null,
+        /** Requested show time, resolved like reminder times. Informational, never booked by Bidu. */
+        val showTime: ZonedDateTime? = null,
+        /** Requested number of seats. Informational, never booked by Bidu. */
+        val seats: Int? = null,
+    ) : Intent
     data class Remember(val key: String, val value: String) : Intent
     data class Recall(val key: String) : Intent
     data object StopListening : Intent
