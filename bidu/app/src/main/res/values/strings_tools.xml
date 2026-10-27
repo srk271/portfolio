@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- WS3: reminders and tool notifications. -->
+<resources>
+    <string name="reminder_action_done">Done</string>
+    <string name="reminder_action_snooze">Snooze 10 min</string>
+    <string name="tools_tap_to_open_reason">Android blocks opening apps from the background. Tap to continue.</string>
+</resources>
