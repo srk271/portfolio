@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- WS2: voice pipeline, foreground service and assistant controller strings. -->
+<resources>
+    <!-- Foreground (listening) notification. -->
+    <string name="voice_notification_listening_for">Listening for %1$s</string>
+    <string name="voice_notification_capturing">Listening to your command…</string>
+    <string name="voice_notification_speaking">Speaking…</string>
+    <string name="voice_notification_waiting_answer">Waiting for your answer</string>
+    <string name="voice_notification_wake_paused">Wake word paused</string>
+    <string name="voice_notification_starting">Starting…</string>
+    <string name="voice_notification_no_model_title">Bidu: push-to-talk only</string>
+    <string name="voice_notification_no_model_text">Wake word unavailable: the speech model is not installed. Tap Talk to speak.</string>
+    <string name="voice_notification_snoozed">Wake word paused until %1$s</string>
+    <string name="voice_notification_last_result">Last: %1$s</string>
+    <string name="voice_notification_public">Bidu is running</string>
+    <string name="voice_action_talk">Talk</string>
+    <string name="voice_action_pause">Pause 30 min</string>
+
+    <!-- Problems that stop wake-word listening (shown in the notification and the app). -->
+    <string name="voice_error_no_model">Wake word unavailable: speech model not installed. Push-to-talk only.</string>
+    <string name="voice_error_model_load">Wake word unavailable: the speech model could not be loaded. Push-to-talk only.</string>
+    <string name="voice_error_mic_permission">Microphone permission is off.</string>
+    <string name="voice_error_mic_busy">Paused: another app or a call is using the microphone.</string>
+    <string name="voice_error_in_call">Paused during a call.</string>
+    <string name="voice_error_mic_failed">The microphone could not be opened. Retrying…</string>
+    <string name="voice_error_no_recognizer">No speech recognizer is available on this phone, and the offline model is not installed.</string>
+    <string name="voice_error_capture_busy">Already listening.</string>
+    <string name="voice_error_recognizer_failed">Speech recognition failed: %1$s</string>
+    <string name="voice_error_offline_model">The offline speech model could not be loaded.</string>
+    <string name="voice_error_mic_unavailable">The microphone is not available right now.</string>
+
+    <!-- Listening switch. -->
+    <string name="voice_listening_needs">Grant %1$s to start listening.</string>
+    <string name="voice_listening_blocked">Android did not allow listening to start from the background. Tap the Bidu notification to resume.</string>
+    <string name="voice_queue_full">Bidu is still busy with earlier requests.</string>
+
+    <!-- Other notifications. -->
+    <string name="voice_mic_permission_title">Bidu needs the microphone</string>
+    <string name="voice_mic_permission_text">Microphone permission is off. Open Bidu to turn listening back on.</string>
+    <string name="voice_confirmation_title">Bidu needs your OK</string>
+    <string name="voice_permission_result_title">Bidu needs a permission</string>
+    <string name="voice_permission_result_text">Open Bidu to allow: %1$s</string>
+
+    <!-- Speech model download. -->
+    <string name="voice_model_consent_required">Agree to the speech model download first.</string>
+    <string name="voice_model_no_space">Not enough free storage for the speech model.</string>
+    <string name="voice_model_http_error">Download failed (server answered %1$d).</string>
+    <string name="voice_model_network_error">Download failed: check the internet connection.</string>
+    <string name="voice_model_incomplete">Download was incomplete. Try again.</string>
+    <string name="voice_model_too_large">The download is larger than expected and was stopped.</string>
+    <string name="voice_model_invalid">The downloaded file is not a valid speech model.</string>
+    <string name="voice_model_install_failed">The speech model could not be installed.</string>
+
+    <!-- Spoken fallbacks, one per reply language. -->
+    <string name="voice_spoken_not_understood_hinglish">Sorry, samjha nahi.</string>
+    <string name="voice_spoken_not_understood_english">Sorry, I didn\'t catch that.</string>
+    <string name="voice_spoken_not_understood_hindi">माफ़ कीजिए, समझ नहीं आया।</string>
+    <string name="voice_spoken_capture_failed_hinglish">Sorry, abhi sun nahi pa raha.</string>
+    <string name="voice_spoken_capture_failed_english">Sorry, I can\'t listen right now.</string>
+    <string name="voice_spoken_capture_failed_hindi">माफ़ कीजिए, अभी सुन नहीं पा रहा।</string>
+    <string name="voice_spoken_yes_or_no_hinglish">Haan ya nahi boliye.</string>
+    <string name="voice_spoken_yes_or_no_english">Please say yes or no.</string>
+    <string name="voice_spoken_yes_or_no_hindi">हाँ या नहीं बोलिए।</string>
+    <string name="voice_spoken_error_hinglish">Kuch gadbad ho gayi, kaam nahi hua.</string>
+    <string name="voice_spoken_error_english">Something went wrong; that didn\'t work.</string>
+    <string name="voice_spoken_error_hindi">कुछ गड़बड़ हो गई, काम नहीं हुआ।</string>
+</resources>
