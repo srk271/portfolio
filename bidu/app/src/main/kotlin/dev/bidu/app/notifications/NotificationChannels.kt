@@ -11,6 +11,9 @@ object NotificationChannels {
     const val RESULTS = "bidu.results"
     const val REMINDERS = "bidu.reminders"
 
+    /** "Bidu paused — tap to resume": HIGH so it heads up, since listening stays off until the user taps it. */
+    const val RESUME = "bidu.resume"
+
     fun ensureCreated(context: Context) {
         val manager = context.getSystemService(NotificationManager::class.java)
         manager.createNotificationChannels(
@@ -24,6 +27,9 @@ object NotificationChannels {
                 },
                 NotificationChannel(REMINDERS, context.getString(R.string.channel_reminders), NotificationManager.IMPORTANCE_HIGH).apply {
                     description = context.getString(R.string.channel_reminders_description)
+                },
+                NotificationChannel(RESUME, context.getString(R.string.channel_resume), NotificationManager.IMPORTANCE_HIGH).apply {
+                    description = context.getString(R.string.channel_resume_description)
                 },
             ),
         )

@@ -3,30 +3,13 @@ package dev.bidu.app.tools
 import dev.bidu.core.memory.MemoryKeys
 import dev.bidu.core.memory.MemoryStore
 import dev.bidu.core.model.MemoryFact
-import dev.bidu.core.model.RiskLevel
 import dev.bidu.core.tool.BuiltinTools
-import dev.bidu.core.tool.ParamSpec
-import dev.bidu.core.tool.ParamType
 import dev.bidu.core.tool.Tool
 import dev.bidu.core.tool.ToolArgs
 import dev.bidu.core.tool.ToolContext
 import dev.bidu.core.tool.ToolErrorCode
 import dev.bidu.core.tool.ToolResult
 import dev.bidu.core.tool.ToolSpec
-
-/** Tool specs the app adds on top of [BuiltinTools]; candidates to move into core. */
-object AppToolSpecs {
-    const val FORGET_NAME = "forget"
-
-    val FORGET = ToolSpec(
-        name = FORGET_NAME,
-        description = "Delete a fact from memory (e.g. home address, contact alias). Destructive: policy asks first. VERIFIED after the fact is gone.",
-        params = listOf(ParamSpec("key", ParamType.STRING, "Memory key to forget, see MemoryKeys", maxLength = 100)),
-        risk = RiskLevel.HIGH,
-        timeoutMillis = 3_000,
-        examples = listOf("ghar ka address bhool ja", "forget my office address"),
-    )
-}
 
 /** Spoken names for the well-known memory keys, so "ghar" and "home_address" are the same fact. */
 internal object MemoryKeyResolver {
@@ -100,7 +83,7 @@ class RecallTool(private val memory: MemoryStore) : Tool {
 }
 
 class ForgetTool(private val memory: MemoryStore) : Tool {
-    override val spec: ToolSpec = AppToolSpecs.FORGET
+    override val spec: ToolSpec = BuiltinTools.FORGET
 
     override suspend fun execute(args: ToolArgs, context: ToolContext): ToolResult {
         val spoken = args.requireString("key")

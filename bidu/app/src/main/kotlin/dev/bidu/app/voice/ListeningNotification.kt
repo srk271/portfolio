@@ -183,7 +183,7 @@ object ListeningNotification {
     /** "Bidu paused — tap to resume": the tap starts the microphone service from a user interaction. */
     fun resume(context: Context): Notification {
         val resume = resumeIntent(context)
-        return Notification.Builder(context, NotificationChannels.RESULTS)
+        return Notification.Builder(context, NotificationChannels.RESUME)
             .setSmallIcon(R.drawable.ic_stat_bidu)
             .setContentTitle(context.getString(R.string.notification_paused_title))
             .setContentText(context.getString(R.string.notification_paused_text))
@@ -195,7 +195,7 @@ object ListeningNotification {
     }
 
     fun micPermissionNeeded(context: Context): Notification =
-        Notification.Builder(context, NotificationChannels.RESULTS)
+        Notification.Builder(context, NotificationChannels.RESUME)
             .setSmallIcon(R.drawable.ic_stat_bidu)
             .setContentTitle(context.getString(R.string.voice_mic_permission_title))
             .setContentText(context.getString(R.string.voice_mic_permission_text))

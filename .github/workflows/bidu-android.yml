@@ -197,7 +197,7 @@ jobs:
           fi
 
           if gh release view "$TAG" > /dev/null 2>&1; then
-            gh release edit "$TAG" --title "$TITLE" --notes "$NOTES" --prerelease
+            gh release edit "$TAG" --title "$TITLE" --notes "$NOTES" --prerelease --target "$GITHUB_SHA"
             gh release upload "$TAG" bidu-debug.apk --clobber
           else
             gh release create "$TAG" bidu-debug.apk --title "$TITLE" --notes "$NOTES" --prerelease --target "$GITHUB_SHA"

@@ -15,7 +15,7 @@ import dev.bidu.core.tool.BuiltinTools
 import dev.bidu.core.tool.Tool
 
 /**
- * Android implementations of every [BuiltinTools] spec plus [AppToolSpecs.FORGET]. Capability checks
+ * Android implementations of every [BuiltinTools] spec. Capability checks
  * happen in the engine before a tool runs; [permissions] is kept for tools that need a live re-check.
  */
 class AndroidToolSet(

@@ -62,14 +62,16 @@ BiduForegroundService (type microphone, START_STICKY, stopWithTask=false, persis
   WakeDetected(phrase, heard, confidence): per-word confidence >= wakeMinConfidence, cooldown wakeCooldownMillis, ignored while
   CAPTURING/PAUSED/busy -> DefaultAssistantController: voice.captureCommand()
     1. Vosk SpeechService.stop() and model recognizer released (AudioRecord closed)      [mode = CAPTURING]
-    2. SpeechRecognizer on Dispatchers.Main, EXTRA_LANGUAGE = settings.recognizerLanguageTag, EXTRA_PREFER_OFFLINE false
-       unavailable/ERROR_RECOGNIZER_BUSY -> Vosk free-form recogniser on the same model (lower accuracy, still offline)
+    2. SpeechRecognizer on Dispatchers.Main, EXTRA_LANGUAGE = settings.recognizerLanguageTag,
+       EXTRA_PREFER_OFFLINE = settings.preferOfflineRecognition (always true on the on-device recognizer). With the setting on,
+       the on-device recognizer (API 33+ when available) is tried first and the regular one is the fallback; otherwise the
+       reverse. Busy -> one retry; all unavailable -> Vosk free-form recogniser on the same model (lower accuracy, offline)
     3. result -> submitText(origin = VOICE_WAKE); during TTS: voice.pauseWakeListening(); after speak(): resumeWakeListening()
     4. wake listening resumes                                                            [mode = WAKE_LISTENING]
 Push-to-talk (UI) = captureCommand() without the service; works with no Vosk model.
 Boot / MY_PACKAGE_REPLACED: SystemEventReceiver -> reminderScheduler.rescheduleAll(); if settings.listeningEnabled post the
-"Bidu paused — tap to resume" notification (NotificationIds.RESUME) whose PendingIntent starts the service (user interaction
-exempts the mic FGS start restriction). Never start the service directly from the receiver.
+"Bidu paused — tap to resume" notification (NotificationIds.RESUME, HIGH-importance channel NotificationChannels.RESUME) whose
+PendingIntent starts the service (user interaction exempts the mic FGS start restriction). Never start the service directly from the receiver.
 Opening apps from the service: IntentLauncher checks Settings.canDrawOverlays(); if granted startActivity(NEW_TASK), else posts
 a "Tap to open X" notification (NotificationIds.OPEN_APP_FALLBACK) and returns NEEDS_USER(ACTION_REQUIRED).
 ```
