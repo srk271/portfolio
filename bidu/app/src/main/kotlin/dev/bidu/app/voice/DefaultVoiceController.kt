@@ -205,7 +205,7 @@ class DefaultVoiceController(
         val onPartial: (String) -> Unit = { text -> _state.update { it.copy(partialTranscript = text) } }
         var lastFailure: String? = null
         // true = on-device recognizer. The preferred engine goes first; the other one is the fallback.
-        val engines = buildList {
+        val engines = buildList<Boolean> {
             val regular = systemRecognizer.isAvailable()
             val onDevice = systemRecognizer.isOnDeviceAvailable()
             if (preferOffline && onDevice) add(true)
